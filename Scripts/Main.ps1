@@ -18,8 +18,11 @@ if (-not (Test-Path (Join-Path $script:ModuleRoot "Modules\Config.psm1"))) {
 
 # Load Config first
 Import-Module (Join-Path $script:ModuleRoot "Modules\Config.psm1") -Force
-# Set environment: 'Development' for debug logs, 'Production' for clean output
-Initialize-Config -Environment 'Production'
+# Determine environment: prefer existing $script:Config.Environment, then WINSTOOLS_ENV, fallback to Production
+$envToUse = 'Production'
+if ($script:Config -and $script:Config.Environment) { $envToUse = $script:Config.Environment }
+elseif ($env:WINSTOOLS_ENV) { $envToUse = $env:WINSTOOLS_ENV }
+Initialize-Config -Environment $envToUse
 
 # Initialize elevation BEFORE loading Modules (must be in main script scope)
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
