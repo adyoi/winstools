@@ -1,9 +1,9 @@
 <#
 .SYNOPSIS
-    Tool: Event Log
+    Tool: Clear Event Logs
 #>
 
-$menuName = "Event Log"
+$menuName = "Clear Event Logs"
 $toolName = "EventLog"
 $toolCategory = "Maintenance"
 

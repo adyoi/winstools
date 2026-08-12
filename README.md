@@ -17,10 +17,12 @@
 | Kategori | Tool |
 | --- | --- |
 | Network | Clear DNS, Proxy Manager |
-| Maintenance | Clear Logs, Disk Repair, Event Log, Win Update Reset |
+| Maintenance | Clear Logs, Disk Repair, Clear Event Logs, Win Update Reset |
 | Advanced | Custom Command (tersimpan di `%LOCALAPPDATA%\Winstools\CustomCommands.json`) |
 | Customization | God Mode, Set OEM |
 | Security | Virus Scan (ClamAV) |
+
+> **Proxy Manager** — dropdown pilihan proxy diambil dari [iplocate/free-proxy-list](https://github.com/iplocate/free-proxy-list) (`all-proxies.txt`), dengan tombol **Refresh** untuk memuat ulang daftar.
 
 ## Fitur
 
@@ -30,6 +32,8 @@
 - **Console output berwarna** per session dengan log terstruktur: `[INFO] [WARNING] [ERROR] [SUCCESS]`.
 - **Auto-scroll** pada menu & tab.
 - **Elevasi otomatis** — meminta izin Administrator saat dijalankan.
+- **Konfirmasi tool berisiko** — Clear DNS, Disk Repair, Disable Services, Win Update Reset, Set OEM, dan Proxy Manager meminta konfirmasi Yes/No sebelum dijalankan.
+- **Proxy Manager dengan daftar proxy** — dropdown proxy dari [iplocate/free-proxy-list](https://github.com/iplocate/free-proxy-list) + tombol Refresh.
 - **Release ter-tanda-tangan** — setiap build ditandatangani sertifikat code signing (email `adyoix@gmail.com`) dan di-timestamp.
 
 ## Persyaratan
@@ -52,9 +56,9 @@ powershell -ExecutionPolicy Bypass -File Scripts\Main.ps1
 
 Mode log DEBUG: ubah `Initialize-Config -Environment 'Development'` pada `Scripts\Main.ps1`.
 
-### Dari release (`Build\<versi>\winstools.exe`)
+### Dari release (`Build\<versi>\winstools.exe` atau installer)
 
-Folder hasil build bersifat **self-contained** — cukup double-click `winstools.exe`. Folder berisi `Modules\`, `Tools\`, dan `Icons\` yang otomatis disalin saat build.
+Folder hasil build bersifat **self-contained** — cukup double-click `winstools.exe`. Folder berisi `Modules\`, `Tools\`, dan `Icons\` yang otomatis disalin saat build. Alternatif: jalankan **`winstools-installer.exe`** (Inno Setup) untuk instalasi ke `C:\Program Files\Winstools` lengkap dengan shortcut & uninstaller.
 
 ---
 
@@ -69,9 +73,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-Pester -Script .\
 Yang diuji:
 
 - **Sintaks** semua skrip & modul (`Scripts\`, `Build\`).
-- **Modul tool** — setiap `Scripts\Tools\*.psm1` dapat di-import dan konfigurasinya valid.
+- **Modul tool** — setiap `Scripts\Tools\*.psm1` dapat di-import, konfigurasinya valid, dan **skema Fields** benar.
 - **Konsistensi runtime** — `CustomCommands.json` berada di `%LOCALAPPDATA%\Winstools`.
-- **Metadata build** — `build.ps1` memiliki parameter `-Version`.
+- **Metadata build** — `build.ps1` memakai `-Version`/file `VERSION`, env `WINSTOOLS_PFX_PASSWORD`, dan timestamp DigiCert.
+- **Roundtrip CustomCommands** — save/read/remove dengan backup & restore file user.
+- **Integritas build** — exe self-contained (`Modules\`, `Tools\`, `Icons\`) dan versinya sesuai `VERSION`.
+- **Tool berisiko** — 6 tool destruktif wajib menetapkan `RequiresConfirm = true`.
 
 Test GUI manual (menampilkan form utama; memerlukan sesi interaktif):
 
@@ -127,12 +134,15 @@ cd Build
 powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-Versi diambil dari **parameter `-Version`** (default `1.2.0.0`); bisa format `1.0` atau `1.0.0.0` (otomatis dinormalisasi ke 4 bagian):
+Versi diambil dari **file `VERSION`** di root project (default `1.0.0`); bisa di-override dengan parameter `-Version` (format `1.0` atau `1.0.0.0`, otomatis dinormalisasi ke 4 bagian):
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\build.ps1 -Version 1.0
+powershell -ExecutionPolicy Bypass -File .\build.ps1                  # versi dari file VERSION
+powershell -ExecutionPolicy Bypass -File .\build.ps1 -Version 1.0     # override
 # → Build\1.0\winstools.exe (versi 1.0.0.0)
 ```
+
+Password PFX: set env `WINSTOOLS_PFX_PASSWORD` (tanpa env, fallback password dev hanya untuk `CA\winstools.pfx` lokal — penting untuk CI/produksi).
 
 Alur build (`build.ps1`):
 
@@ -146,9 +156,10 @@ Output:
 
 ```
 Build\
-├── build.ps1, setup-ca.ps1, set-versioninfo.ps1, Package.psd1   # tooling
+├── build.ps1, build-installer.ps1, installer.iss, setup-ca.ps1, set-versioninfo.ps1   # tooling
 └── <major.minor>\
     ├── winstools.exe        # aplikasi rilis
+    ├── winstools-installer.exe   # installer (opsional, lihat bagian 3)
     ├── Modules\             # runtime (disalin otomatis)
     ├── Tools\
     └── Icons\
@@ -156,7 +167,19 @@ Build\
 
 > Folder `Build\*\` (hasil build) tidak masuk repository (`.gitignore`) — cukup disimpan di rilis GitHub / distribusi manual.
 
-### 3. Mengganti versi
+### 3. Installer (opsional)
+
+Butuh **Inno Setup 6** (`choco install innosetup -y`), lalu:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\build-installer.ps1          # versi dari file VERSION
+powershell -ExecutionPolicy Bypass -File .\build-installer.ps1 -Version 1.0
+# → Build\1.0\winstools-installer.exe
+```
+
+Installer mengemas `winstools.exe` + `Modules\`, `Tools\`, `Icons\` ke `C:\Program Files\Winstools`, shortcut Start Menu, dan uninstaller. Pada GitHub Actions, installer otomatis dibangun dan dilampirkan ke **release** saat tag `v*`.
+
+### 4. Mengganti versi
 
 Cukup beri parameter `-Version` saat build — **tidak perlu mengubah isi build.ps1**:
 
@@ -167,7 +190,7 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1 -Version 1.3.0.0
 
 Nama folder output selalu `major.minor` dari versi tersebut.
 
-### 4. Verifikasi tanda tangan
+### 5. Verifikasi tanda tangan
 
 ```powershell
 (Get-AuthenticodeSignature .\Build\1.0\winstools.exe).Status

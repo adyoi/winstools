@@ -5,6 +5,7 @@ Semua perubahan penting pada proyek dicatat di sini. Format mengikuti [Keep a Ch
 ## [1.0.1] - belum dirilis
 
 ### Ditambahkan
+- Proxy Manager: dropdown pilihan proxy dari [iplocate/free-proxy-list](https://github.com/iplocate/free-proxy-list) (`all-proxies.txt`), tombol **Refresh**, dan label sumber daftar.
 - Konfirmasi (Yes/No) sebelum menjalankan tool berisiko: Clear DNS, Disk Repair, Disable Services, Win Update Reset, Set OEM, Proxy Manager.
 - Auto-release di GitHub Actions saat tag `v*` (termasuk installer).
 - Build installer Inno Setup: `Build\build-installer.ps1` → `winstools-installer.exe`.
@@ -14,7 +15,10 @@ Semua perubahan penting pada proyek dicatat di sini. Format mengikuti [Keep a Ch
 - `CHANGELOG.md`, `CONTRIBUTING.md`, badge status CI di README.
 
 ### Diubah
+- Rename tool **Event Log** → **Clear Event Logs**.
+- Rename tool **Virus Scan** → **Virus Scan (ClamAV)**.
 - CI build untuk push ke `main` memakai versi dari file `VERSION` (bukan hardcoded).
+- README: dokumentasi installer, VERSION default, env password, proxy list.
 
 ## [1.0.0] - 2026-08
 

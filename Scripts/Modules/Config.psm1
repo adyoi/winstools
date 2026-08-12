@@ -4,9 +4,9 @@
 #>
 
 $script:Config = @{
-    Environment = 'Production'  # 'Development' or 'Production'
-    Debug       = $false
-    LogLevel    = 'INFO'        # 'DEBUG', 'INFO', 'WARN', 'ERROR'
+    Environment = 'Development'  # 'Development' or 'Production'
+    Debug       = $true
+    LogLevel    = 'DEBUG'        # 'DEBUG', 'INFO', 'WARN', 'ERROR'
 }
 
 function Get-Config {

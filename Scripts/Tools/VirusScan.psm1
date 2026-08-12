@@ -1,9 +1,9 @@
 <#
 .SYNOPSIS
-    Tool: Virus Scan
+    Tool: Virus Scan (ClamAV)
 #>
 
-$menuName = "Virus Scan"
+$menuName = "Virus Scan (ClamAV)"
 $toolName = "VirusScan"
 $toolCategory = "Security"
 
