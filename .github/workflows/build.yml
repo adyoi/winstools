@@ -1,0 +1,49 @@
+name: Build & Test
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ps2exe
+        shell: powershell
+        run: Install-Module ps2exe -Force -Scope CurrentUser
+
+      - name: Build (tag v* -> versi tanpa 'v')
+        shell: powershell
+        run: |
+          $ver = $env:GITHUB_REF_NAME -replace '^v', ''
+          Write-Host "Version: $ver"
+          & .\Build\build.ps1 -Version $ver
+
+      - name: Run Pester tests
+        shell: powershell
+        run: |
+          $p = Get-Module Pester -ListAvailable | Sort-Object Version -Descending | Select-Object -First 1
+          Write-Host "Pester: $($p.Version)"
+          if ($p.Version -ge [version]'5.0') {
+            $r = Invoke-Pester -Path .\Test -PassThru
+          } else {
+            $r = Invoke-Pester -Script .\Test -PassThru
+          }
+          Write-Host ("Passed: {0}  Failed: {1}" -f $r.PassedCount, $r.FailedCount)
+          if ($r.FailedCount -gt 0) { exit 1 }
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: winstools-${{ github.ref_name }}
+          path: |
+            Build/*
+          if-no-files-found: error

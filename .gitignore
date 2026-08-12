@@ -1,0 +1,13 @@
+# Build output
+winstools.exe
+Build/*/
+
+# Runtime data (per-user, di %LOCALAPPDATA%\Winstools)
+*.log
+logs/
+
+# Test output (CI)
+TestResults.xml
+
+# Private CA & signing keys (SENSITIF - jangan pernah di-commit)
+CA/
