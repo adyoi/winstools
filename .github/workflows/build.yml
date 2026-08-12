@@ -2,6 +2,8 @@ name: Build & Test
 
 on:
   push:
+    branches:
+      - 'main'
     tags:
       - 'v*'
   workflow_dispatch:
@@ -20,11 +22,12 @@ jobs:
         shell: powershell
         run: Install-Module ps2exe -Force -Scope CurrentUser
 
-      - name: Build (tag v* -> versi tanpa 'v')
+      - name: Build (tag v* -> versi tanpa 'v'; push main -> versi dev)
         shell: powershell
         run: |
-          $ver = $env:GITHUB_REF_NAME -replace '^v', ''
-          Write-Host "Version: $ver"
+          $ref = $env:GITHUB_REF_NAME
+          if ($ref -match '^v[0-9]') { $ver = $ref -replace '^v', '' } else { $ver = '1.0.0' }
+          Write-Host "Version: $ver (ref: $ref)"
           & .\Build\build.ps1 -Version $ver
 
       - name: Run Pester tests
