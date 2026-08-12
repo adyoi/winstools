@@ -12,10 +12,11 @@ $fields = @()
 
 function Get-ToolConfig {
     return @{
-        MenuName    = $menuName
-        ToolName    = $toolName
-        Category    = $toolCategory
-        Fields      = $fields
+        MenuName        = $menuName
+        ToolName        = $toolName
+        Category        = $toolCategory
+        Fields          = $fields
+        RequiresConfirm = $true
     }
 }
 

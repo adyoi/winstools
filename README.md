@@ -2,6 +2,8 @@
 
 > Windows Super Tools adalah utilitas manajemen & perawatan Windows berbasis **PowerShell + Windows Forms** dengan arsitektur **multi-session**: setiap tool berjalan pada tab independen dengan console output sendiri — beberapa tool dapat berjalan bersamaan tanpa saling menunggu.
 
+![Build status](https://github.com/adyoi/winstools/actions/workflows/build.yml/badge.svg)
+
 **Status rilis:** `1.0.0.0` — build tersedia di [`Build\1.0\`](Build/1.0/winstools.exe), ditandatangani (Authenticode SHA256 + timestamp) dan valid.
 
 > **Data runtime** (`CustomCommands.json`, log Virus Scan) tersimpan di **`%LOCALAPPDATA%\Winstools`** — bukan di folder exe, sehingga tidak tertimpa saat rebuild.

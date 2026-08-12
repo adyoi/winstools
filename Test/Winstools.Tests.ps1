@@ -73,4 +73,107 @@ Describe 'Metadata build (build.ps1)' {
         $build = Get-Content $buildPath -Raw
         if ($build -notmatch '\[string\]\$Version') { throw 'build.ps1 tidak memiliki parameter -Version' }
     }
+
+    It 'build.ps1 membaca versi dari file VERSION di root project' -TestCases @{ buildPath = (Join-Path $projRoot 'Build\build.ps1') } {
+        param($buildPath)
+        $build = Get-Content $buildPath -Raw
+        if ($build -notmatch 'VERSION') { throw 'build.ps1 tidak membaca file VERSION' }
+    }
+
+    It 'build.ps1 memakai timestamp server DigiCert' -TestCases @{ buildPath = (Join-Path $projRoot 'Build\build.ps1') } {
+        param($buildPath)
+        $build = Get-Content $buildPath -Raw
+        if ($build -notmatch 'timestamp\.digicert\.com') { throw 'build.ps1 tidak memakai timestamp server DigiCert' }
+    }
+
+    It 'build.ps1 memakai env WINSTOOLS_PFX_PASSWORD untuk password PFX' -TestCases @{ buildPath = (Join-Path $projRoot 'Build\build.ps1') } {
+        param($buildPath)
+        $build = Get-Content $buildPath -Raw
+        if ($build -notmatch 'WINSTOOLS_PFX_PASSWORD') { throw 'build.ps1 tidak memakai env password PFX' }
+    }
+
+    It 'File VERSION ada di root project dan berisi versi valid' -TestCases @{ vf = (Join-Path $projRoot 'VERSION') } {
+        param($vf)
+        if (-not (Test-Path $vf)) { throw 'File VERSION tidak ditemukan' }
+        $v = (Get-Content $vf -Raw).Trim()
+        if ($v -notmatch '^\d+\.\d+(\.\d+)*$') { throw "Format versi tidak valid: '$v'" }
+    }
+}
+
+Describe 'Skema konfigurasi tool' {
+    $toolsDir = Join-Path $projRoot 'Scripts\Tools'
+    $tools = Get-ChildItem $toolsDir -Filter '*.psm1' -File
+
+    foreach ($t in $tools) {
+        It "Tool $($t.Name): Fields memenuhi skema" -TestCases @{ t = $t } {
+            param($t)
+            $m = Import-Module $t.FullName -PassThru -Force -ErrorAction SilentlyContinue
+            $cfg = & $m.ExportedCommands['Get-ToolConfig']
+            $flds = $cfg.Fields
+            if ($null -eq $flds) { throw "Tool $($t.Name) tidak mendefinisikan Fields" }
+            $knownTypes = @('Text', 'TextArea', 'Combo', 'Password')
+            foreach ($f in @($flds)) {
+                if ([string]::IsNullOrEmpty($f.Name))  { throw "Tool $($t.Name): field tanpa Name" }
+                if ([string]::IsNullOrEmpty($f.Label)) { throw "Tool $($t.Name): field '$($f.Name)' tanpa Label" }
+                if ($knownTypes -notcontains $f.Type)  { throw "Tool $($t.Name): field '$($f.Name)' tipe '$($f.Type)' tidak dikenal" }
+            }
+        }
+    }
+
+    It 'Tool destruktif menetapkan RequiresConfirm = true' {
+        $expected = @('ClearDNS', 'DiskRepair', 'DisableServices', 'WinUpdateReset', 'SetOEM', 'ProxyManager')
+        foreach ($toolName in $expected) {
+            $file = Join-Path $toolsDir "$toolName.psm1"
+            if (-not (Test-Path $file)) { throw "Tool destruktif tidak ditemukan: $toolName" }
+            $m = Import-Module $file -PassThru -Force -ErrorAction SilentlyContinue
+            $cfg = & $m.ExportedCommands['Get-ToolConfig']
+            if ($cfg.RequiresConfirm -ne $true) { throw "Tool $toolName tidak menetapkan RequiresConfirm = true" }
+        }
+    }
+}
+
+Describe 'CustomCommands roundtrip (tanpa merusak data user)' {
+    It 'Save -> Read -> Remove berfungsi dan memulihkan file asli' -TestCases @{ modPath = (Join-Path $projRoot 'Scripts\Tools\CustomCommand.psm1') } {
+        param($modPath)
+        Import-Module $modPath -Force -ErrorAction Stop
+        $path = Get-CustomCommandsPath
+        $hadFile = Test-Path $path
+        $backup = $null
+        if ($hadFile) { $backup = [System.IO.File]::ReadAllText($path) }
+        try {
+            Save-CustomCommand 'winstools_test_rt' 'Write-Output roundtrip-ok' | Out-Null
+            $cmds = Read-CustomCommands
+            if (-not $cmds.ContainsKey('winstools_test_rt')) { throw 'Perintah tidak tersimpan ke file' }
+            if ($cmds['winstools_test_rt'] -ne 'Write-Output roundtrip-ok') { throw 'Nilai command tidak sesuai setelah roundtrip' }
+            Remove-CustomCommand 'winstools_test_rt' | Out-Null
+            $cmds2 = Read-CustomCommands
+            if ($cmds2.ContainsKey('winstools_test_rt')) { throw 'Perintah tidak terhapus' }
+        } finally {
+            if ($hadFile) { [System.IO.File]::WriteAllText($path, $backup) }
+            else { Remove-Item $path -Force -ErrorAction SilentlyContinue }
+        }
+    }
+}
+
+Describe 'Integritas build (hanya bila exe ada)' {
+    $buildRoot = Join-Path $projRoot 'Build'
+    $buildDirs = @(Get-ChildItem $buildRoot -Directory -ErrorAction SilentlyContinue | Where-Object { Test-Path (Join-Path $_.FullName 'winstools.exe') })
+    $versionFile = Join-Path $projRoot 'VERSION'
+
+    if ($buildDirs.Count -gt 0) {
+        foreach ($d in $buildDirs) {
+            It "Build $($d.Name): winstools.exe self-contained dan versi sesuai VERSION" -TestCases @{ exe = (Join-Path $d.FullName 'winstools.exe'); d = $d; vf = $versionFile } {
+                param($exe, $d, $vf)
+                if (-not (Test-Path $exe)) { throw 'winstools.exe tidak ada' }
+                foreach ($sub in @('Modules', 'Tools', 'Icons')) {
+                    if (-not (Test-Path (Join-Path $d.FullName $sub))) { throw "Folder $sub tidak ada di build" }
+                }
+                $vi = (Get-Item $exe).VersionInfo
+                if ([string]::IsNullOrEmpty($vi.FileVersion)) { throw 'FileVersion kosong pada exe' }
+                $expected = ((Get-Content $vf -Raw).Trim() -split '\.')
+                while ($expected.Count -lt 4) { $expected += '0' }
+                if ($vi.FileVersion -ne ($expected -join '.')) { throw "FileVersion '$($vi.FileVersion)' != '$($expected -join '.')'" }
+            }
+        }
+    }
 }

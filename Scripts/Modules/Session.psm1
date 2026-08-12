@@ -86,6 +86,7 @@ function New-Session {
         Module      = if ($Feature) { $Feature.Module } else { $null }
         ModulePath  = if ($Feature) { $Feature.ModulePath } else { $null }
         HasCustomUI = if ($Feature) { $Feature.HasCustomUI } else { $false }
+        RequiresConfirm = if ($Feature) { $Feature.RequiresConfirm } else { $false }
     }
 
     $tab = New-SessionTab -Title $FeatureName -SessionData $sessionData
@@ -142,6 +143,19 @@ function New-Session {
         $params = @{}
         foreach ($k in $sess.Inputs.Keys) {
             $params[$k] = $sess.Inputs[$k].Text
+        }
+
+        if ($sess.RequiresConfirm) {
+            $answer = [System.Windows.Forms.MessageBox]::Show(
+                "Tool ini melakukan tindakan sistem yang berisiko.`n`nLanjutkan eksekusi '$($sess.FeatureName)'?",
+                "Konfirmasi",
+                [System.Windows.Forms.MessageBoxButtons]::YesNo,
+                [System.Windows.Forms.MessageBoxIcon]::Warning)
+            if ($answer -ne [System.Windows.Forms.DialogResult]::Yes) {
+                Write-SessionLog -OutputBox $sess.OutputBox -Message "Eksekusi dibatalkan oleh pengguna (konfirmasi)." -Type "WARNING"
+                Write-DebugLog "Session cancelled by user (confirm): $($sess.FeatureName)" -Category 'SESSION'
+                return
+            }
         }
 
         $sess.IsRunning = $true

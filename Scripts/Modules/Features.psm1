@@ -27,6 +27,7 @@ function Get-Features {
                         Category    = $config.Category
                         Fields      = $config.Fields
                         HasCustomUI = $config.CustomUI
+                        RequiresConfirm = $config.RequiresConfirm
                         Module      = $toolModule
                         ModulePath  = $toolModule.Path
                         Action      = {

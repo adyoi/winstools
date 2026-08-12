@@ -8,22 +8,24 @@
     Path PFX sertifikat code signing. Kosongkan untuk memakai default CA\winstools.pfx di root project.
 
 .PARAMETER PfxPassword
-    Password PFX.
+    Password PFX. Kosongkan untuk memakai env WINSTOOLS_PFX_PASSWORD
+    (fallback untuk CA lokal: password dev; set env untuk produksi/CI).
 
 .PARAMETER SignThumbprint
     Alternatif: pakai sertifikat dari Cert:\CurrentUser\My berdasarkan thumbprint.
 
 .PARAMETER Version
-    Versi build (default 1.2.0.0). Bisa "1.3" / "1.3.0.0"; otomatis dilengkapi jadi 4 bagian.
+    Versi build. Default ambil dari file VERSION di root project (fallback 1.0.0).
+    Bisa "1.3" / "1.3.0.0"; otomatis dilengkapi jadi 4 bagian.
     Nama folder output = major.minor (Build\1.3).
 #>
 
 [CmdletBinding()]
 param(
     [string]$PfxPath        = "",
-    [string]$PfxPassword    = "WINSTOOLS-CA-2026",
+    [string]$PfxPassword    = "",
     [string]$SignThumbprint = "",
-    [string]$Version        = "1.2.0.0"
+    [string]$Version        = ""
 )
 
 $ErrorActionPreference = 'Stop'
@@ -44,6 +46,18 @@ $metaCompany     = "PT (Perorangan) Adidaya Karya Utama"              # Company 
 $metaCopyright   = "Copyright © 2026 PT (Perorangan) Adidaya Karya Utama. All rights reserved."  # LegalCopyright
 $metaVersion     = $Version            # File Version & Product Version (dari parameter)
 
+# Default versi: ambil dari file VERSION di root project (fallback 1.0.0)
+if (-not $metaVersion) {
+    $versionFile = Join-Path $projRoot "VERSION"
+    if (Test-Path $versionFile) {
+        $metaVersion = (Get-Content $versionFile -Raw).Trim()
+        Write-Host "[build] Versi dari file VERSION: $metaVersion"
+    } else {
+        $metaVersion = "1.0.0"
+        Write-Warning "[build] File VERSION tidak ditemukan - memakai default 1.0.0."
+    }
+}
+
 # Normalisasi versi ke 4 bagian (contoh: "1.3" -> "1.3.0.0")
 $parts = @($metaVersion -split '\.')
 while ($parts.Count -lt 4) { $parts += '0' }
@@ -57,6 +71,8 @@ $shortVersion = ($metaVersion -split '\.')[0..1] -join '.'
 # ---------------------------------------------------------------------------
 $inputScript = Join-Path $projRoot "Scripts\Main.ps1"
 $iconFile    = Join-Path $projRoot "Icons\window.ico"
+# Catatan: Set-AuthenticodeSignature (PowerShell 5.1) hanya menerima skema http untuk
+# timestamp server. Respons timestamp dari DigiCert tetap ditandatangani oleh DigiCert.
 $timestamp   = "http://timestamp.digicert.com"
 
 $outDir    = Join-Path $buildRoot $shortVersion
@@ -68,6 +84,15 @@ Write-Host "[build] Versi: $metaVersion ($shortVersion)"
 Write-Host "[build] Output: $outputExe"
 
 if (-not $PfxPath) { $PfxPath = Join-Path $projRoot "CA\winstools.pfx" }
+
+# Resolve password: eksplisit > env WINSTOOLS_PFX_PASSWORD > fallback dev (hanya CA lokal)
+if (-not $PfxPassword) {
+    $PfxPassword = $env:WINSTOOLS_PFX_PASSWORD
+}
+if (-not $PfxPassword -and $PfxPath -and $PfxPath -like '*\CA\winstools.pfx' -and (Test-Path $PfxPath)) {
+    $PfxPassword = "WINSTOOLS-CA-2026"
+    Write-Warning "[build] PfxPassword tidak diberikan - memakai fallback password dev lokal. Set env WINSTOOLS_PFX_PASSWORD untuk produksi/CI."
+}
 
 # ---------------------------------------------------------------------------
 # 1) Compile (ps2exe)

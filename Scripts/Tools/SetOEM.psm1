@@ -24,6 +24,7 @@ function Get-ToolConfig {
         ToolName    = $toolName
         Category    = $toolCategory
         Fields      = $fields
+        RequiresConfirm = $true
     }
 }
 

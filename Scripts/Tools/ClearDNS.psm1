@@ -19,8 +19,9 @@ function Get-ToolConfig {
         MenuName    = $menuName
         ToolName    = $toolName
         Category    = $toolCategory
-        Fields      = $fields
-        CustomUI    = $true
+        Fields          = $fields
+        RequiresConfirm = $true
+        CustomUI        = $true
         HasCustomPanel = $true
     }
 }

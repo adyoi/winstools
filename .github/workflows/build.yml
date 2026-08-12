@@ -9,11 +9,13 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
     runs-on: windows-latest
+    env:
+      WINSTOOLS_PFX_PASSWORD: ${{ secrets.WINSTOOLS_PFX_PASS }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,13 +24,33 @@ jobs:
         shell: powershell
         run: Install-Module ps2exe -Force -Scope CurrentUser
 
-      - name: Build (tag v* -> versi tanpa 'v'; push main -> versi dev)
+      - name: Decode signing cert (secrets)
+        shell: powershell
+        run: |
+          $b64 = $env:WINSTOOLS_PFX_B64
+          if ($b64) {
+            $dir = Join-Path $env:GITHUB_WORKSPACE 'CA'
+            New-Item -ItemType Directory -Path $dir -Force | Out-Null
+            [System.IO.File]::WriteAllBytes((Join-Path $dir 'winstools.pfx'), [System.Convert]::FromBase64String($b64))
+            Write-Host 'Signing cert decoded -> CA\winstools.pfx'
+          } else {
+            Write-Host 'WINSTOOLS_PFX_B64 tidak di-set - build tanpa tanda tangan.'
+          }
+        env:
+          WINSTOOLS_PFX_B64: ${{ secrets.WINSTOOLS_PFX_B64 }}
+
+      - name: Build (tag v* -> versi tanpa 'v'; push main -> versi dari file VERSION)
         shell: powershell
         run: |
           $ref = $env:GITHUB_REF_NAME
-          if ($ref -match '^v[0-9]') { $ver = $ref -replace '^v', '' } else { $ver = '1.0.0' }
-          Write-Host "Version: $ver (ref: $ref)"
-          & .\Build\build.ps1 -Version $ver
+          if ($ref -match '^v[0-9]') {
+            $ver = $ref -replace '^v', ''
+            Write-Host "Version: $ver (tag: $ref)"
+            & .\Build\build.ps1 -Version $ver
+          } else {
+            Write-Host "Version: dari file VERSION (ref: $ref)"
+            & .\Build\build.ps1
+          }
 
       - name: Run Pester tests
         shell: powershell
@@ -43,6 +65,15 @@ jobs:
           Write-Host ("Passed: {0}  Failed: {1}" -f $r.PassedCount, $r.FailedCount)
           if ($r.FailedCount -gt 0) { exit 1 }
 
+      - name: Build installer (Inno Setup, hanya tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: powershell
+        run: |
+          choco install innosetup -y --no-progress
+          $ver = $env:GITHUB_REF_NAME -replace '^v', ''
+          Write-Host "Installer version: $ver"
+          & .\Build\build-installer.ps1 -Version $ver
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -50,3 +81,12 @@ jobs:
           path: |
             Build/*
           if-no-files-found: error
+
+      - name: Auto-release (tag v*)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            Build/*/winstools.exe
+            Build/*/winstools-installer.exe
+          generate_release_notes: true
