@@ -38,7 +38,7 @@
 | Runtime | PowerShell 5.1+ (bawaan Windows), .NET Framework 4.x |
 | Hak akses | Administrator (elevasi otomatis) |
 | *Build* | PowerShell + modul `ps2exe`; **OpenSSL** (khusus persiapan CA) |
-| *Test* | Pester 3.4+ (terbundel di Windows PowerShell 5.1) |
+| *Test* | Pester 3.4 atau 5.x (terbundel di Windows PowerShell 5.1) |
 
 ## Cara Menjalankan
 
@@ -58,7 +58,7 @@ Folder hasil build bersifat **self-contained** — cukup double-click `winstools
 
 ## Cara Menjalankan Test
 
-Test otomatis memakai **Pester** (3.4+ sudah terbundel di Windows PowerShell 5.1).
+Test otomatis memakai **Pester** (3.4 — terbundel di Windows PowerShell 5.1 — atau 5.x, kompatibel keduanya).
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-Pester -Script .\Test"
