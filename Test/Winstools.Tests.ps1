@@ -120,7 +120,8 @@ Describe 'Skema konfigurasi tool' {
         }
     }
 
-    It 'Tool destruktif menetapkan RequiresConfirm = true' {
+    It 'Tool destruktif menetapkan RequiresConfirm = true' -TestCases @{ toolsDir = (Join-Path $projRoot 'Scripts\Tools') } {
+        param($toolsDir)
         $expected = @('ClearDNS', 'DiskRepair', 'DisableServices', 'WinUpdateReset', 'SetOEM', 'ProxyManager')
         foreach ($toolName in $expected) {
             $file = Join-Path $toolsDir "$toolName.psm1"
