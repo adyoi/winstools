@@ -9,5 +9,8 @@ logs/
 # Test output (CI)
 TestResults.xml
 
+# Screenshot artefak capture_test (disimpan ke %TEMP% sejak v1.0.1; file lama repo root)
+winstools.png
+
 # Private CA & signing keys (SENSITIF - jangan pernah di-commit)
 CA/

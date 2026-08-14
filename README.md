@@ -4,7 +4,7 @@
 
 ![Build status](https://github.com/adyoi/winstools/actions/workflows/build.yml/badge.svg)
 
-**Status rilis:** `1.0.1` (belum dirilis) — build `1.0.0.0` tersedia di [`Build\1.0\`](Build/1.0/winstools.exe), ditandatangani (Authenticode SHA256 + timestamp) dan valid.
+**Status rilis:** `1.0.1` — build `1.0.1.0` tersedia di [`Build\1.0\`](Build/1.0/winstools.exe), ditandatangani (Authenticode SHA256 + timestamp) dan valid.
 
 > **Data runtime** (`CustomCommands.json`, log Virus Scan) tersimpan di **`%LOCALAPPDATA%\Winstools`** — bukan di folder exe, sehingga tidak tertimpa saat rebuild.
 
@@ -34,7 +34,7 @@
 - **Elevasi otomatis** — meminta izin Administrator saat dijalankan.
 - **Konfirmasi tool berisiko** — Clear DNS, Disk Repair, Disable Services, Win Update Reset, Set OEM, dan Proxy Manager meminta konfirmasi Yes/No sebelum dijalankan.
 - **Proxy Manager dengan daftar proxy** — dropdown proxy dari [iplocate/free-proxy-list](https://github.com/iplocate/free-proxy-list) + tombol Refresh.
-- **Tombol Options** — akses cepat ke pengaturan, build, test, cek update, dan informasi aplikasi (tab Gui Config / Gui Builder / Gui Tester / Check Update / Changelog / About).
+- **Tombol Options** — akses cepat ke pengaturan, build, test, cek update, dan informasi aplikasi (tab Gui Config / Gui Builder / Gui Tester / Update / Changelog / About).
 - **Release ter-tanda-tangan** — setiap build ditandatangani sertifikat code signing (email `adyoix@gmail.com`) dan di-timestamp.
 
 ## Persyaratan
@@ -110,7 +110,7 @@ Test GUI manual (menampilkan form utama; memerlukan sesi interaktif):
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\Test\form_test.ps1    -AutoClose 5    # smoke test form
 powershell -NoProfile -ExecutionPolicy Bypass -File .\Test\close_test.ps1   -Scenario stuck # tutup bersih tanpa proses tersisa
-powershell -NoProfile -ExecutionPolicy Bypass -File .\Test\capture_test.ps1                 # tangkap screenshot winstools.png
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Test\capture_test.ps1                 # tangkap screenshot ke %TEMP%\winstools_capture.png
 powershell -NoProfile -ExecutionPolicy Bypass -File .\Test\button_test.ps1  -AutoClose 3    # test tombol Options
 powershell -NoProfile -ExecutionPolicy Bypass -File .\Test\config_test.ps1                  # test tab Gui Config
 ```

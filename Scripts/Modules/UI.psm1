@@ -597,11 +597,9 @@ function New-SessionPanel {
     $outputBox.Padding = [System.Windows.Forms.Padding]::new(50)
     $outputBox.Text = "[READY] $FeatureName`n"
 
-    # Panel Height: adjust for TextArea fields
-    $textAreaCount = @($normalizedFields | Where-Object { $_.Type -eq 'TextArea' }).Count
-    $panelHeight = if ($normalizedFields.Count -eq 0) { 110 } else { 90 + ([Math]::Ceiling(($normalizedFields.Count + $textAreaCount * 3) / 2) * 55) }
+    # Panel Height: disesuaikan setelah layout selesai (mengakomodasi TextArea)
     $panelInput = [System.Windows.Forms.Panel]::new()
-    $panelInput.Height = $panelHeight
+    $panelInput.Height = 110
     $panelInput.Dock = [System.Windows.Forms.DockStyle]::Top
     $panelInput.BackColor = [System.Drawing.Color]::White
     $panelInput.AutoScroll = $true
@@ -648,12 +646,33 @@ function New-SessionPanel {
     $colWidth = 340; $colGap = 30; $startX = 20; $startY = 88; $rowHeight = 55
     $scriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
 
+    # Layout cursor-based: field normal 2-per-baris, TextArea menempati satu baris
+    # penuh (lebar dua kolom) mulai dari sisi kiri agar tidak terpotong.
+    $cursor = $startY
+    $rowCols = 0
+    $lastBottom = $startY
+
     for ($i = 0; $i -lt $normalizedFields.Count; $i++) {
         $field = $normalizedFields[$i]
-        $col = $i % 2
-        $row = [Math]::Floor($i / 2)
-        $x = $startX + ($col * ($colWidth + $colGap))
-        $y = $startY + ($row * $rowHeight)
+        $isArea = ($field.Type -eq 'TextArea')
+
+        if ($isArea) {
+            if ($rowCols -gt 0) { $cursor += $rowHeight; $rowCols = 0 }
+            $x = $startX
+            $y = $cursor
+            $ctrlW = $colWidth * 2 + $colGap
+            $ctrlH = 80
+            $lastBottom = $y + 18 + $ctrlH
+            $cursor += $rowHeight + 48
+        } else {
+            $x = $startX + ($rowCols * ($colWidth + $colGap))
+            $y = $cursor
+            $ctrlW = $colWidth
+            $ctrlH = 26
+            $lastBottom = $y + 18 + $ctrlH
+            $rowCols++
+            if ($rowCols -ge 2) { $cursor += $rowHeight; $rowCols = 0 }
+        }
 
         $lbl = [System.Windows.Forms.Label]::new()
         $lbl.Text = $field.Label
@@ -679,7 +698,7 @@ function New-SessionPanel {
             'TextArea' {
                 $tb = [System.Windows.Forms.TextBox]::new()
                 $tb.Multiline = $true
-                $tb.Height = 50
+                $tb.Height = $ctrlH
                 $tb.ScrollBars = [System.Windows.Forms.ScrollBars]::Both
                 $tb.AcceptsReturn = $true
                 $tb.Text = if ($field.Default) { $field.Default } else { "" }
@@ -691,12 +710,13 @@ function New-SessionPanel {
                 $ctrl = $tb
             }
         }
-        $ctrl.Size = [System.Drawing.Size]::new($colWidth, 26)
+        $ctrl.Size = [System.Drawing.Size]::new($ctrlW, $ctrlH)
         $ctrl.Location = [System.Drawing.Point]::new($x, $y + 18)
-        if ($field.Type -eq 'TextArea') { $ctrl.Width = $colWidth * 2 + $colGap; $ctrl.Height = 80 }
         $panelInput.Controls.Add($ctrl)
         $inputControls[$field.Name] = $ctrl
     }
+
+    if ($normalizedFields.Count -gt 0) { $panelInput.Height = $lastBottom + 16 }
 
     if ($normalizedFields.Count -eq 0) {
         $lblNoParam = [System.Windows.Forms.Label]::new()

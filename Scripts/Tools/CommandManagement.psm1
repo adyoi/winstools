@@ -4,7 +4,7 @@
     Custom commands with save/load/execute functionality
 #>
 
-$menuName = "Command Manager"
+$menuName = "Command Management"
 $toolName = "CommandManagement"
 $toolCategory = "Advanced"
 

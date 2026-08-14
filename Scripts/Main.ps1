@@ -18,8 +18,9 @@ if (-not (Test-Path (Join-Path $script:ModuleRoot "Modules\Config.psm1"))) {
 
 # Load Config first
 Import-Module (Join-Path $script:ModuleRoot "Modules\Config.psm1") -Force
-# Set environment: 'Development' for debug logs, 'Production' for clean output
-Initialize-Config -Environment 'Production'
+# Set environment: memuat nilai tersimpan dari config.json (fallback 'Production' bila file belum ada).
+# Jangan kirim argumen di sini agar config yang di-simpan (mis. via Options > Gui Config) tidak tertimpa.
+Initialize-Config
 
 # Initialize elevation BEFORE loading Modules (must be in main script scope)
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)

@@ -5,7 +5,7 @@ Add-Type -AssemblyName System.Drawing
 
 $root = Split-Path $PSScriptRoot -Parent   # winstools\
 Import-Module (Join-Path $root 'Scripts\Modules\Config.psm1') -Force
-Initialize-Config -Environment 'Development'
+Initialize-Config -Environment 'Development' -ConfigPath (Join-Path $env:TEMP 'winstools_test_config.json')
 Import-Module (Join-Path $root 'Scripts\Modules\App.psm1') -Force
 Import-Module (Join-Path $root 'Scripts\Modules\UI.psm1') -Force
 Import-Module (Join-Path $root 'Scripts\Modules\Session.psm1') -Force
@@ -67,7 +67,7 @@ foreach ($feat in $features) {
 $form.Controls.Add($panelRight)
 $form.Controls.Add($panelMenu)
 
-$script:savePath = Join-Path $root 'winstools.png'
+$script:savePath = Join-Path $env:TEMP 'winstools_capture.png'
 $script:captured = $false
 
 $form.Add_Shown({

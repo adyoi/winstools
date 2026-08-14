@@ -15,7 +15,7 @@ Add-Type -AssemblyName System.Drawing
 
 $root = Split-Path $PSScriptRoot -Parent   # winstools\
 Import-Module (Join-Path $root 'Scripts\Modules\Config.psm1') -Force
-Initialize-Config -Environment 'Production' | Out-Null
+Initialize-Config -Environment 'Production' -ConfigPath (Join-Path $env:TEMP 'winstools_test_config.json') | Out-Null
 Import-Module (Join-Path $root 'Scripts\Modules\Options.psm1') -Force
 
 Write-Output "== [1] Tombol Options =="

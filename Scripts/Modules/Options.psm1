@@ -66,6 +66,7 @@ function New-OptionsForm {
     $form.Text = "Options - Winstools"
     $form.Size = [System.Drawing.Size]::new(820, 600)
     $form.MinimumSize = [System.Drawing.Size]::new(700, 500)
+    $form.FormBorderStyle = if ($opt_allowResize) { [System.Windows.Forms.FormBorderStyle]::Sizable } else { [System.Windows.Forms.FormBorderStyle]::FixedSingle }
     $form.StartPosition = "CenterScreen"
     $form.BackColor = [System.Drawing.Color]::FromArgb(245, 245, 247)
     $iconPath = Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) "Icons\window.ico"
@@ -300,48 +301,81 @@ function Read-ProcLog {
 function New-BuilderTab {
     $tab = [System.Windows.Forms.TabPage]::new()
     $tab.Text = "Gui Builder"
-    $tab.Padding = [System.Windows.Forms.Padding]::new(14)
+    $tab.Padding = [System.Windows.Forms.Padding]::new(7)
     $tab.BackColor = [System.Drawing.Color]::FromArgb(245, 245, 247)
 
     $top = [System.Windows.Forms.Panel]::new()
     $top.Dock = [System.Windows.Forms.DockStyle]::Top
-    $top.Height = 148
+    $top.Height = 200
     $top.BackColor = [System.Drawing.Color]::FromArgb(245, 245, 247)
 
     $lblTitle = [System.Windows.Forms.Label]::new()
-    $lblTitle.Text = "Gui Builder - Kompilasi EXE"
+    $lblTitle.Text = "Gui Builder"
     $lblTitle.Font = [System.Drawing.Font]::new("Segoe UI", 13, [System.Drawing.FontStyle]::Bold)
     $lblTitle.ForeColor = [System.Drawing.Color]::FromArgb(40, 40, 45)
     $lblTitle.Location = [System.Drawing.Point]::new(14, 12)
     $lblTitle.AutoSize = $true
     $top.Controls.Add($lblTitle)
 
+    $lblScript = [System.Windows.Forms.Label]::new()
+    $lblScript.Text = "Skrip Build"
+    $lblScript.Font = [System.Drawing.Font]::new("Segoe UI", 9, [System.Drawing.FontStyle]::Bold)
+    $lblScript.ForeColor = [System.Drawing.Color]::FromArgb(80, 80, 86)
+    $lblScript.Location = [System.Drawing.Point]::new(14, 44)
+    $lblScript.AutoSize = $true
+    $top.Controls.Add($lblScript)
+
+    $cboScript = [System.Windows.Forms.ComboBox]::new()
+    $cboScript.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
+    $cboScript.Items.AddRange([string[]]@(
+        'Kompilasi EXE (ps2exe + Sign)',
+        'Installer Inno Setup',
+        'Buat CA & Sertifikat Code Signing',
+        'Patch Resource Versi exe'
+    ))
+    $cboScript.SelectedIndex = 0
+    $cboScript.Size = [System.Drawing.Size]::new(520, 26)
+    $cboScript.Location = [System.Drawing.Point]::new(14, 66)
+    $top.Controls.Add($cboScript)
+
     $lblVer = [System.Windows.Forms.Label]::new()
     $lblVer.Text = "Versi"
     $lblVer.Font = [System.Drawing.Font]::new("Segoe UI", 9, [System.Drawing.FontStyle]::Bold)
     $lblVer.ForeColor = [System.Drawing.Color]::FromArgb(80, 80, 86)
-    $lblVer.Location = [System.Drawing.Point]::new(14, 48)
+    $lblVer.Location = [System.Drawing.Point]::new(14, 98)
     $lblVer.AutoSize = $true
     $top.Controls.Add($lblVer)
 
     $txtVer = [System.Windows.Forms.TextBox]::new()
     $txtVer.Text = Get-AppVersion
     $txtVer.Size = [System.Drawing.Size]::new(140, 26)
-    $txtVer.Location = [System.Drawing.Point]::new(14, 70)
+    $txtVer.Location = [System.Drawing.Point]::new(14, 120)
     $top.Controls.Add($txtVer)
 
-    $lblPath = [System.Windows.Forms.Label]::new()
-    $lblPath.Text = "Skrip: Build\build-exe.ps1"
-    $lblPath.Font = [System.Drawing.Font]::new("Segoe UI", 8.5)
-    $lblPath.ForeColor = [System.Drawing.Color]::FromArgb(130, 130, 138)
-    $lblPath.Location = [System.Drawing.Point]::new(170, 74)
-    $lblPath.AutoSize = $true
-    $top.Controls.Add($lblPath)
+    $lblArgs = [System.Windows.Forms.Label]::new()
+    $lblArgs.Text = "Argumen tambahan (opsional)"
+    $lblArgs.Font = [System.Drawing.Font]::new("Segoe UI", 9, [System.Drawing.FontStyle]::Bold)
+    $lblArgs.ForeColor = [System.Drawing.Color]::FromArgb(80, 80, 86)
+    $lblArgs.Location = [System.Drawing.Point]::new(170, 98)
+    $lblArgs.AutoSize = $true
+    $top.Controls.Add($lblArgs)
+
+    $txtArgs = [System.Windows.Forms.TextBox]::new()
+    $txtArgs.Size = [System.Drawing.Size]::new(360, 26)
+    $txtArgs.Location = [System.Drawing.Point]::new(170, 120)
+    $top.Controls.Add($txtArgs)
+
+    $lblHint = [System.Windows.Forms.Label]::new()
+    $lblHint.Font = [System.Drawing.Font]::new("Segoe UI", 8.5)
+    $lblHint.ForeColor = [System.Drawing.Color]::FromArgb(130, 130, 138)
+    $lblHint.Location = [System.Drawing.Point]::new(254, 159)
+    $lblHint.Size = [System.Drawing.Size]::new(560, 32)
+    $top.Controls.Add($lblHint)
 
     $btnBuild = [System.Windows.Forms.Button]::new()
     $btnBuild.Text = "Build"
     $btnBuild.Size = [System.Drawing.Size]::new(110, 32)
-    $btnBuild.Location = [System.Drawing.Point]::new(14, 104)
+    $btnBuild.Location = [System.Drawing.Point]::new(14, 152)
     $btnBuild.BackColor = [System.Drawing.Color]::FromArgb(0, 122, 204)
     $btnBuild.ForeColor = [System.Drawing.Color]::White
     $btnBuild.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
@@ -353,7 +387,7 @@ function New-BuilderTab {
     $btnOpenFolder = [System.Windows.Forms.Button]::new()
     $btnOpenFolder.Text = "Buka Folder"
     $btnOpenFolder.Size = [System.Drawing.Size]::new(110, 32)
-    $btnOpenFolder.Location = [System.Drawing.Point]::new(134, 104)
+    $btnOpenFolder.Location = [System.Drawing.Point]::new(134, 152)
     $btnOpenFolder.BackColor = [System.Drawing.Color]::FromArgb(68, 68, 72)
     $btnOpenFolder.ForeColor = [System.Drawing.Color]::White
     $btnOpenFolder.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
@@ -369,37 +403,69 @@ function New-BuilderTab {
     $box.ForeColor = [System.Drawing.Color]::FromArgb(210, 210, 215)
     $box.BorderStyle = [System.Windows.Forms.BorderStyle]::None
     $box.Dock = [System.Windows.Forms.DockStyle]::Fill
-    $box.Text = "[READY] Masukkan versi lalu klik Build.`n"
-    $tab.Controls.Add($top)
-    $tab.Controls.Add($box)
+    $box.Text = "[READY] Pilih skrip build, isi versi/argumen, lalu klik Build.`n"
 
-    $btnBuild.Tag = @{ Ver = $txtVer; Box = $box; Btn = $btnBuild }
-    $btnOpenFolder.Tag = @{ Ver = $txtVer }
+    $tab.Controls.Add($box)
+    $tab.Controls.Add($top)
+    
+    $d = @{ Script = $cboScript; Ver = $txtVer; Args = $txtArgs; Box = $box; Btn = $btnBuild; Hint = $lblHint; LblVer = $lblVer; LblArgs = $lblArgs }
+    $d.Script.Tag = $d
+    $btnBuild.Tag = $d
+    $btnOpenFolder.Tag = $d
+
+    $lblHint.Text = 'Output: Build\<major.minor>\winstools.exe. Kompilasi via ps2exe, set resource versi, sign (opsional), salin runtime.'
+
+    $cboScript.Add_SelectedIndexChanged({
+        param($s, $e)
+        $dd = $s.Tag
+        $idx = $dd.Script.SelectedIndex
+        $needVer = ($idx -eq 0 -or $idx -eq 1)
+        $dd.LblVer.Visible = $needVer
+        $dd.Ver.Visible = $needVer
+        $hints = @(
+            'Output: Build\<major.minor>\winstools.exe. Kompilasi via ps2exe, set resource versi, sign (opsional), salin runtime.',
+            'Butuh winstools.exe hasil build-exe. Output: Build\<major.minor>\winstools-installer.exe (Inno Setup).',
+            'Buat Root CA + sertifikat code signing (cukup sekali). Contoh: -SignCN "Winstools Dev" -PfxPassword rahasia.',
+            'Patch resource versi exe. Contoh: -FilePath "1.0\winstools.exe" -FileVersion 1.0.0.0 -Language 0x0421.'
+        )
+        $dd.Hint.Text = $hints[$idx]
+    })
 
     $btnBuild.Add_Click({
         param($s, $e)
         $d = $s.Tag
+        $kind = $d.Script.SelectedIndex
         $ver = $d.Ver.Text.Trim()
-        if (-not $ver) { $d.Box.AppendText("[ERROR] Versi kosong.`n"); return }
         $root = Get-ProjectRoot
         if (-not $root) { $d.Box.AppendText("[ERROR] Project root tidak ditemukan. Jalankan dari source (dev).`n"); return }
-        $buildScript = Join-Path $root 'Build\build-exe.ps1'
+        $scriptName = @('build-exe.ps1', 'build-installer.ps1', 'setup-ca.ps1', 'setup-vi.ps1')[$kind]
+        $buildScript = Join-Path $root ('Build\' + $scriptName)
         if (-not (Test-Path $buildScript)) {
-            $d.Box.AppendText("[ERROR] build-exe.ps1 tidak ditemukan: $buildScript`n")
+            $d.Box.AppendText("[ERROR] $scriptName tidak ditemukan: $buildScript`n")
+            return
+        }
+        $needVer = ($kind -eq 0 -or $kind -eq 1)
+        if ($needVer -and -not $ver) {
+            $d.Box.AppendText("[ERROR] Versi kosong.`n")
             return
         }
         if ($script:OptBuildState -and $script:OptBuildState.Proc -and -not $script:OptBuildState.Proc.HasExited) {
             $d.Box.AppendText("[WARN] Build masih berjalan.`n")
             return
         }
+        $argsLine = ''
+        if ($needVer) { $argsLine = "-Version '$ver'" }
+        $extra = $d.Args.Text.Trim()
+        if ($extra) { if ($argsLine) { $argsLine += ' ' }; $argsLine += $extra }
         $d.Btn.Enabled = $false
         $d.Btn.Text = "Membangun..."
         $d.Box.Clear()
-        $d.Box.AppendText("[BUILD] Versi: $ver`n")
-        $d.Box.AppendText("[BUILD] Skrip : $buildScript`n`n")
+        $d.Box.AppendText("[BUILD] Skrip : $scriptName`n")
+        $d.Box.AppendText("[BUILD] Versi : $(if ($needVer) { $ver } else { '-' })`n")
+        $d.Box.AppendText("[BUILD] Path  : $buildScript`n`n")
 
         $runner = Join-Path $env:TEMP ("winstools_runner_" + [guid]::NewGuid().ToString('N') + ".ps1")
-        $body = "`$ErrorActionPreference='Continue'; & '$buildScript' -Version '$ver' 2>&1 | ForEach-Object { `$_.ToString() }"
+        $body = "`$ErrorActionPreference='Continue'; & '$buildScript' $argsLine 2>&1 | ForEach-Object { `$_.ToString() }"
         Set-Content -LiteralPath $runner -Value $body -Encoding UTF8
         $runArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $runner)
         $state = Start-RedirectProcess -FilePath 'powershell.exe' -Arguments $runArgs
@@ -417,7 +483,14 @@ function New-BuilderTab {
         $ver = $d.Ver.Text.Trim()
         $root = Get-ProjectRoot
         if (-not $root) { return }
-        $shortVer = ($ver -split '\.')[0..1] -join '.'
+        if (-not $ver) {
+            $dir = Join-Path $root 'Build'
+            if (Test-Path $dir) { Start-Process explorer.exe $dir }
+            return
+        }
+        $vp = @($ver -split '\.')
+        while ($vp.Count -lt 2) { $vp += '0' }
+        $shortVer = $vp[0..1] -join '.'
         $dir = Join-Path $root "Build\$shortVer"
         if (Test-Path $dir) { Start-Process explorer.exe $dir }
         else {
@@ -435,7 +508,7 @@ function New-BuilderTab {
 function New-TesterTab {
     $tab = [System.Windows.Forms.TabPage]::new()
     $tab.Text = "Gui Tester"
-    $tab.Padding = [System.Windows.Forms.Padding]::new(14)
+    $tab.Padding = [System.Windows.Forms.Padding]::new(7)
     $tab.BackColor = [System.Drawing.Color]::FromArgb(245, 245, 247)
 
     $top = [System.Windows.Forms.Panel]::new()
@@ -444,7 +517,7 @@ function New-TesterTab {
     $top.BackColor = [System.Drawing.Color]::FromArgb(245, 245, 247)
 
     $lblTitle = [System.Windows.Forms.Label]::new()
-    $lblTitle.Text = "Gui Tester - Jalankan Test"
+    $lblTitle.Text = "Gui Tester"
     $lblTitle.Font = [System.Drawing.Font]::new("Segoe UI", 13, [System.Drawing.FontStyle]::Bold)
     $lblTitle.ForeColor = [System.Drawing.Color]::FromArgb(40, 40, 45)
     $lblTitle.Location = [System.Drawing.Point]::new(14, 12)
@@ -461,9 +534,16 @@ function New-TesterTab {
 
     $cboTest = [System.Windows.Forms.ComboBox]::new()
     $cboTest.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
-    $cboTest.Items.AddRange(@('Pester (semua unit test)', 'Form smoke test (auto-close)', 'Capture screenshot test'))
+    $cboTest.Items.AddRange(@(
+        'Pester (semua unit test)',
+        'Form smoke test (auto-close)',
+        'Close regression test (job stuck)',
+        'Capture screenshot test',
+        'Button/Options dialog test',
+        'Config GUI test'
+    ))
     $cboTest.SelectedIndex = 0
-    $cboTest.Size = [System.Drawing.Size]::new(320, 26)
+    $cboTest.Size = [System.Drawing.Size]::new(380, 26)
     $cboTest.Location = [System.Drawing.Point]::new(14, 70)
     $top.Controls.Add($cboTest)
 
@@ -487,8 +567,10 @@ function New-TesterTab {
     $box.BorderStyle = [System.Windows.Forms.BorderStyle]::None
     $box.Dock = [System.Windows.Forms.DockStyle]::Fill
     $box.Text = "[READY] Pilih jenis test lalu klik Jalankan.`n"
-    $tab.Controls.Add($top)
+
     $tab.Controls.Add($box)
+    $tab.Controls.Add($top)
+    
 
     $btnRun.Tag = @{ Cbo = $cboTest; Box = $box; Btn = $btnRun }
 
@@ -519,8 +601,20 @@ function New-TesterTab {
             1 {
                 $body = "& '$testDir\form_test.ps1' -AutoClose 3"
             }
-            default {
+            2 {
+                $body = "& '$testDir\close_test.ps1' -Scenario stuck"
+            }
+            3 {
                 $body = "& '$testDir\capture_test.ps1'"
+            }
+            4 {
+                $body = "& '$testDir\button_test.ps1' -AutoClose 3"
+            }
+            5 {
+                $body = "& '$testDir\config_test.ps1'"
+            }
+            default {
+                $body = "& '$testDir\config_test.ps1'"
             }
         }
         Set-Content -LiteralPath $runner -Value $body -Encoding UTF8
@@ -538,12 +632,12 @@ function New-TesterTab {
 }
 
 # ---------------------------------------------------------------------------
-# Tab: Check Update / Self Update
+# Tab: Update
 # ---------------------------------------------------------------------------
 function New-UpdateTab {
     $tab = [System.Windows.Forms.TabPage]::new()
-    $tab.Text = "Check Update - Self Update"
-    $tab.Padding = [System.Windows.Forms.Padding]::new(14)
+    $tab.Text = "Update"
+    $tab.Padding = [System.Windows.Forms.Padding]::new(7)
     $tab.BackColor = [System.Drawing.Color]::FromArgb(245, 245, 247)
 
     $top = [System.Windows.Forms.Panel]::new()
@@ -602,7 +696,6 @@ function New-UpdateTab {
     $tab.Controls.Add($box)
     $tab.Controls.Add($top)
     
-
     $btnCheck.Tag = @{ Box = $box; Btn = $btnCheck; BtnDownload = $btnDownload }
     $btnDownload.Tag = @{ Box = $box; Btn = $btnCheck; BtnDownload = $btnDownload }
 
@@ -663,7 +756,7 @@ function New-UpdateTab {
 function New-ChangelogTab {
     $tab = [System.Windows.Forms.TabPage]::new()
     $tab.Text = "Changelog"
-    $tab.Padding = [System.Windows.Forms.Padding]::new(8)
+    $tab.Padding = [System.Windows.Forms.Padding]::new(7)
     $tab.BackColor = [System.Drawing.Color]::FromArgb(245, 245, 247)
 
     $box = [System.Windows.Forms.RichTextBox]::new()
@@ -689,7 +782,7 @@ function New-ChangelogTab {
 function New-AboutTab {
     $tab = [System.Windows.Forms.TabPage]::new()
     $tab.Text = "About"
-    $tab.Padding = [System.Windows.Forms.Padding]::new(14)
+    $tab.Padding = [System.Windows.Forms.Padding]::new(7)
     $tab.BackColor = [System.Drawing.Color]::FromArgb(245, 245, 247)
 
     $lbl = [System.Windows.Forms.Label]::new()

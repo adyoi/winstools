@@ -2,7 +2,7 @@
 
 Semua perubahan penting pada proyek dicatat di sini. Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.0.1] - belum dirilis
+## [1.0.1] - 2026-08-14
 
 ### Ditambahkan
 - Proxy Manager: dropdown pilihan proxy dari [iplocate/free-proxy-list](https://github.com/iplocate/free-proxy-list) (`all-proxies.txt`), tombol **Refresh**, dan label sumber daftar.
@@ -23,7 +23,7 @@ Semua perubahan penting pada proyek dicatat di sini. Format mengikuti [Keep a Ch
 - README: dokumentasi installer, VERSION default, env password, proxy list, tombol Options.
 
 ### Ditambahkan (1.0.1)
-- **Tombol Options** (merah + separator) di menu utama: dialog dengan tab **Gui Config** (Environment Development/Production, Debug, LogLevel), **Gui Builder** (jalankan `build-exe.ps1`), **Gui Tester** (Pester / form test), **Check Update** (cek rilis GitHub `adyoi/winstools` + download), **Changelog**, dan **About**.
+- **Tombol Options** (merah + separator) di menu utama: dialog dengan tab **Gui Config** (Environment Development/Production, Debug, LogLevel), **Gui Builder** (jalankan `build-exe.ps1`), **Gui Tester** (Pester / form test), **Update** (cek rilis GitHub `adyoi/winstools` + download), **Changelog**, dan **About**.
 
 ### Diperbaiki
 - Options: output log tidak lagi tertimpa tombol (layout panel atas + `Dock=Fill` di tab Builder/Tester/Update).
@@ -41,6 +41,17 @@ Semua perubahan penting pada proyek dicatat di sini. Format mengikuti [Keep a Ch
 ### Diubah (uji)
 - Rename file test mengikuti standard Pester: suite utama → **`Pester.Tests.ps1`** (ter-discover otomatis), skrip GUI → **`form_test.ps1`**, **`close_test.ps1`**, **`capture_test.ps1`**, **`button_test.ps1`**, **`config_test.ps1`** (tidak ikut ter-discover Pester karena butuh sesi interaktif). Referensi di CI, README, dan Gui Tester ikut diperbarui.
 - Options Gui Config: dialog kini memuat & menampilkan nilai aktif `Get-Config` saat dibuka (tidak lagi menampilkan default), sehingga perubahan config tetap terlihat setelah dialog ditutup dan dibuka lagi.
+
+### Ditambahkan (lanjutan)
+- **Gui Builder** kini mencakup 4 skrip build: `build-exe.ps1`, `build-installer.ps1`, `setup-ca.ps1`, `setup-vi.ps1` — dengan field **Versi** (ditampilkan hanya untuk skrip yang membutuhkannya), **Argumen tambahan**, dan hint berubah sesuai skrip.
+- **Gui Tester** kini 6 jenis test: Pester, form smoke, close regression (`-Scenario stuck`), capture screenshot, button/Options dialog, dan config GUI.
+
+### Diubah (lanjutan)
+- Default konfigurasi aplikasi: `Environment=Production`, `Debug=false`, `LogLevel=ERROR`.
+- Tab Options: label "Check Update - Self Update" disingkat menjadi "Update".
+- Gui Config: layout output memakai TextArea berbasis posisi kursor sehingga tidak menimpa teks.
+- Gui Builder "Buka Folder": normalisasi versi ke `major.minor`; jika versi kosong, folder `Build` dibuka.
+- Screenshot `capture_test` kini disimpan ke `%TEMP%\winstools_capture.png` (bukan di root repo).
 
 ## [1.0.0] - 2026-08
 
