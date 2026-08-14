@@ -6,7 +6,26 @@
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
-$text_menu       = "WINSTOOLS v1.0"
+function Get-UIVersion {
+    $cand = @(
+        (Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) 'VERSION'),
+        (Join-Path (Split-Path $PSScriptRoot -Parent) 'VERSION'),
+        (Join-Path $PSScriptRoot 'VERSION')
+    )
+    foreach ($p in $cand) {
+        if (Test-Path $p) {
+            $v = (Get-Content $p -Raw).Trim()
+            if ($v) { return $v }
+        }
+    }
+    try {
+        $vi = [System.Diagnostics.FileVersionInfo]::GetVersionInfo([System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName)
+        if ($vi.FileVersion) { return $vi.FileVersion }
+    } catch {}
+    return '1.0.0'
+}
+
+$text_menu       = "WINSTOOLS v$(Get-UIVersion)"
 $text_form       = "Windows Super Tools - $text_menu"
 $text_btnLeft    = "<"
 $text_btnRight   = ">"
@@ -187,63 +206,28 @@ function New-ContentPanel {
 }
 
 function Get-PhysicalCoreCount {
+    if ($script:PhysicalCoreCache) { return $script:PhysicalCoreCache }
     $coreCount = 0
     try {
-        if (-not ('Winstools.Native.CpuInfo' -as [type])) {
-            Add-Type -TypeDefinition @'
-using System;
-using System.Runtime.InteropServices;
-namespace Winstools.Native {
-    public static class CpuInfo {
-        [StructLayout(LayoutKind.Sequential)]
-        public struct SLPI {
-            public UIntPtr ProcessorMask;
-            public uint Relationship;
-            public uint ExtraInfoSize;
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-            public byte[] ExtraInfo;
+        $cpuKey = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey('HARDWARE\DESCRIPTION\System\CentralProcessor')
+        if ($cpuKey) {
+            $coreCount = @($cpuKey.GetSubKeyNames()).Count
+            $cpuKey.Close()
         }
-        const uint REL_PROCESSOR_CORE = 0;
-        [DllImport("kernel32.dll", SetLastError = true)]
-        static extern bool GetLogicalProcessorInformation(IntPtr buffer, ref uint returnedLength);
-        public static int PhysicalCores() {
-            uint len = 0;
-            GetLogicalProcessorInformation(IntPtr.Zero, ref len);
-            int size = (int)len;
-            if (size <= 0) return -1;
-            IntPtr buf = Marshal.AllocHGlobal(size);
-            try {
-                if (!GetLogicalProcessorInformation(buf, ref len)) return -1;
-                int stride = Marshal.SizeOf(typeof(SLPI));
-                int count = 0;
-                long baseAddr = buf.ToInt64();
-                for (long off = 0; off + stride <= size; off += stride) {
-                    SLPI info = (SLPI)Marshal.PtrToStructure((IntPtr)(baseAddr + off), typeof(SLPI));
-                    if (info.Relationship == REL_PROCESSOR_CORE) count++;
-                }
-                return count;
-            } finally {
-                Marshal.FreeHGlobal(buf);
-            }
-        }
-    }
-}
-'@
-        }
-        $coreCount = [Winstools.Native.CpuInfo]::PhysicalCores()
-    } catch {
-        $coreCount = 0
-    }
+    } catch { $coreCount = 0 }
     if ($coreCount -le 0) { $coreCount = [Environment]::ProcessorCount }
+    $script:PhysicalCoreCache = $coreCount
     return $coreCount
 }
 
 function Get-AppIconHtml {
+    if ($script:AppIconHtmlCache) { return $script:AppIconHtmlCache }
     $pngPath = Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) "Icons\window.png"
     if (-not (Test-Path $pngPath)) { $pngPath = Join-Path (Split-Path $PSScriptRoot -Parent) "Icons\window.png" }
     if (-not (Test-Path $pngPath)) { return "" }
     $iconData = [Convert]::ToBase64String([IO.File]::ReadAllBytes($pngPath))
-    return "<img src=`"data:image/png;base64,$iconData`" style=`"width:40px;height:40px;vertical-align:middle;margin-right:12px;`" alt=`"`">"
+    $script:AppIconHtmlCache = "<img src=`"data:image/png;base64,$iconData`" style=`"width:40px;height:40px;vertical-align:middle;margin-right:12px;`" alt=`"`">"
+    return $script:AppIconHtmlCache
 }
 
 function Get-WelcomeHtml {
@@ -393,7 +377,7 @@ function Get-WelcomeHtml {
 </head>
 <body>
     <h1>$iconImg$text_menu</h1>
-    <p class="sub">Sistem Maintenance Tool &mdash; Multi-Session &middot; $($env:COMPUTERNAME) &middot; $($env:USERNAME)</p>
+    <p class="sub">Windows Super Tools - Limitless Windows Optimization &middot; $($env:COMPUTERNAME) &middot; $($env:USERNAME)</p>
 
     <table class="grid"><tr>
         $cardStart
@@ -478,16 +462,11 @@ function New-WelcomeView {
 
 function Start-WelcomeLoad {
     $uiFile = Join-Path $PSScriptRoot "UI.psm1"
-    $job = Start-Job -ArgumentList $uiFile -ScriptBlock {
-        param($f)
-        try {
-            Import-Module $f -Force
-            Get-WelcomeHtml
-        } catch {
-            Write-Output ""
-        }
-    }
-    Set-AppState -Key 'WelcomeJob' -Value $job
+    # Runspace in-process: hindari spawn proses PowerShell baru (Add-Type C# dikompilasi ulang tiap proses)
+    $script:WelcomePs = [PowerShell]::Create()
+    $null = $script:WelcomePs.AddScript("Import-Module -Name '$uiFile' -Force; Get-WelcomeHtml")
+    $script:WelcomeAsync = $script:WelcomePs.BeginInvoke()
+    Set-AppState -Key 'WelcomeJob' -Value @{ Async = $script:WelcomeAsync; PowerShell = $script:WelcomePs }
 }
 
 function New-MenuButton {

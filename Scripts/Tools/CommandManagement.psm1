@@ -5,7 +5,7 @@
 #>
 
 $menuName = "Custom Command"
-$toolName = "CustomCommand"
+$toolName = "CommandManagement"
 $toolCategory = "Advanced"
 
 $fields = @(
@@ -129,7 +129,7 @@ function Get-CustomUI {
     })
 
     return @{
-        Type = "CustomCommand"
+        Type = "CommandManagement"
         SessionData = $sessionData
         Controls = @($btnSave, $btnLoad)
     }

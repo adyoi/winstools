@@ -1,5 +1,5 @@
 # WINSTOOLS - Uji otomatis (kompatibel Pester 3.4 & 5.x)
-# Jalankan:  powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-Pester -Script .\Test"
+# Jalankan:  powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-Pester -Script .\Test\pester_test.ps1"
 # Catatan: assertion memakai `throw` (bukan sintaks 'Should') agar lintas-versi Pester.
 
 $here = Split-Path $MyInvocation.MyCommand.Path -Parent
@@ -58,7 +58,7 @@ Describe 'Modul tool' {
 }
 
 Describe 'Konsistensi runtime' {
-    It 'CustomCommands.json disimpan di %LOCALAPPDATA%\Winstools (bukan folder exe)' -TestCases @{ modPath = (Join-Path $projRoot 'Scripts\Tools\CustomCommand.psm1') } {
+    It 'CustomCommands.json disimpan di %LOCALAPPDATA%\Winstools (bukan folder exe)' -TestCases @{ modPath = (Join-Path $projRoot 'Scripts\Tools\CommandManagement.psm1') } {
         param($modPath)
         Import-Module $modPath -Force -ErrorAction SilentlyContinue
         $path = Get-CustomCommandsPath
@@ -67,29 +67,29 @@ Describe 'Konsistensi runtime' {
     }
 }
 
-Describe 'Metadata build (build.ps1)' {
-    It 'build.ps1 memiliki parameter -Version' -TestCases @{ buildPath = (Join-Path $projRoot 'Build\build.ps1') } {
+Describe 'Metadata build (build-exe.ps1)' {
+    It 'build-exe.ps1 memiliki parameter -Version' -TestCases @{ buildPath = (Join-Path $projRoot 'Build\build-exe.ps1') } {
         param($buildPath)
         $build = Get-Content $buildPath -Raw
-        if ($build -notmatch '\[string\]\$Version') { throw 'build.ps1 tidak memiliki parameter -Version' }
+        if ($build -notmatch '\[string\]\$Version') { throw 'build-exe.ps1 tidak memiliki parameter -Version' }
     }
 
-    It 'build.ps1 membaca versi dari file VERSION di root project' -TestCases @{ buildPath = (Join-Path $projRoot 'Build\build.ps1') } {
+    It 'build-exe.ps1 membaca versi dari file VERSION di root project' -TestCases @{ buildPath = (Join-Path $projRoot 'Build\build-exe.ps1') } {
         param($buildPath)
         $build = Get-Content $buildPath -Raw
-        if ($build -notmatch 'VERSION') { throw 'build.ps1 tidak membaca file VERSION' }
+        if ($build -notmatch 'VERSION') { throw 'build-exe.ps1 tidak membaca file VERSION' }
     }
 
-    It 'build.ps1 memakai timestamp server DigiCert' -TestCases @{ buildPath = (Join-Path $projRoot 'Build\build.ps1') } {
+    It 'build-exe.ps1 memakai timestamp server DigiCert' -TestCases @{ buildPath = (Join-Path $projRoot 'Build\build-exe.ps1') } {
         param($buildPath)
         $build = Get-Content $buildPath -Raw
-        if ($build -notmatch 'timestamp\.digicert\.com') { throw 'build.ps1 tidak memakai timestamp server DigiCert' }
+        if ($build -notmatch 'timestamp\.digicert\.com') { throw 'build-exe.ps1 tidak memakai timestamp server DigiCert' }
     }
 
-    It 'build.ps1 memakai env WINSTOOLS_PFX_PASSWORD untuk password PFX' -TestCases @{ buildPath = (Join-Path $projRoot 'Build\build.ps1') } {
+    It 'build-exe.ps1 memakai env WINSTOOLS_PFX_PASSWORD untuk password PFX' -TestCases @{ buildPath = (Join-Path $projRoot 'Build\build-exe.ps1') } {
         param($buildPath)
         $build = Get-Content $buildPath -Raw
-        if ($build -notmatch 'WINSTOOLS_PFX_PASSWORD') { throw 'build.ps1 tidak memakai env password PFX' }
+        if ($build -notmatch 'WINSTOOLS_PFX_PASSWORD') { throw 'build-exe.ps1 tidak memakai env password PFX' }
     }
 
     It 'File VERSION ada di root project dan berisi versi valid' -TestCases @{ vf = (Join-Path $projRoot 'VERSION') } {
@@ -122,7 +122,7 @@ Describe 'Skema konfigurasi tool' {
 
     It 'Tool destruktif menetapkan RequiresConfirm = true' -TestCases @{ toolsDir = (Join-Path $projRoot 'Scripts\Tools') } {
         param($toolsDir)
-        $expected = @('ClearDNS', 'DiskRepair', 'DisableServices', 'WinUpdateReset', 'SetOEM', 'ProxyManager')
+        $expected = @('ClearDNS', 'DiskManagement', 'ServiceManagement', 'WinUpdateReset', 'WinOEM', 'ProxyManagement')
         foreach ($toolName in $expected) {
             $file = Join-Path $toolsDir "$toolName.psm1"
             if (-not (Test-Path $file)) { throw "Tool destruktif tidak ditemukan: $toolName" }
@@ -134,7 +134,7 @@ Describe 'Skema konfigurasi tool' {
 }
 
 Describe 'CustomCommands roundtrip (tanpa merusak data user)' {
-    It 'Save -> Read -> Remove berfungsi dan memulihkan file asli' -TestCases @{ modPath = (Join-Path $projRoot 'Scripts\Tools\CustomCommand.psm1') } {
+    It 'Save -> Read -> Remove berfungsi dan memulihkan file asli' -TestCases @{ modPath = (Join-Path $projRoot 'Scripts\Tools\CommandManagement.psm1') } {
         param($modPath)
         Import-Module $modPath -Force -ErrorAction Stop
         $path = Get-CustomCommandsPath

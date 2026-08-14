@@ -4,7 +4,7 @@
 #>
 
 $menuName = "Clear Event Logs"
-$toolName = "EventLog"
+$toolName = "ClearEventLogs"
 $toolCategory = "Maintenance"
 
 $fields = @()

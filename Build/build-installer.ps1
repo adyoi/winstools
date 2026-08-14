@@ -31,7 +31,7 @@ $shortVersion = ($Version -split '\.')[0..1] -join '.'
 
 $exe = Join-Path $root "$shortVersion\winstools.exe"
 if (-not (Test-Path $exe)) {
-    throw "winstools.exe belum dibuild: $exe. Jalankan build.ps1 dulu."
+    throw "winstools.exe belum dibuild: $exe. Jalankan build-exe.ps1 dulu."
 }
 
 $iscc = Get-Command ISCC.exe -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -51,7 +51,7 @@ if (-not $iscc) {
 Write-Host "[installer] Versi: $Version (folder Build\$shortVersion)"
 Write-Host "[installer] ISCC : $($iscc.Source)"
 
-& $iscc.Source (Join-Path $root 'installer.iss') "/DAppVersion=$Version" "/DAppShortVersion=$shortVersion"
+& $iscc.Source (Join-Path $root 'config-installer.iss') "/DAppVersion=$Version" "/DAppShortVersion=$shortVersion"
 if ($LASTEXITCODE -ne 0) { throw "ISCC gagal (exit code $LASTEXITCODE)." }
 
 $out = Join-Path $root "$shortVersion\winstools-installer.exe"

@@ -21,13 +21,16 @@ function Set-Config {
 
 function Initialize-Config {
     param(
-        [string]$Environment = 'Production'
+        [string]$Environment = 'Production',
+        [switch]$Debug,
+        [ValidateSet('DEBUG','INFO','WARN','ERROR')][string]$LogLevel
     )
     $script:Config.Environment = $Environment
-    $script:Config.Debug = ($Environment -eq 'Development')
-    $script:Config.LogLevel = if ($Environment -eq 'Development') { 'DEBUG' } else { 'ERROR' }
+    $dev = ($Environment -eq 'Development')
+    $script:Config.Debug = if ($PSBoundParameters.ContainsKey('Debug')) { $Debug } else { $dev }
+    $script:Config.LogLevel = if ($PSBoundParameters.ContainsKey('LogLevel')) { $LogLevel } else { if ($dev) { 'DEBUG' } else { 'ERROR' } }
     if ($script:Config.Debug) {
-        Write-Host "[CONFIG] Environment: $Environment, Debug: $($script:Config.Debug)"
+        Write-Host "[CONFIG] Environment: $Environment, Debug: $($script:Config.Debug), LogLevel: $($script:Config.LogLevel)"
     }
 }
 

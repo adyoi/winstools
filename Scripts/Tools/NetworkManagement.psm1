@@ -5,7 +5,7 @@
 #>
 
 $menuName = "Network Diagnostics"
-$toolName = "NetworkDiagnostics"
+$toolName = "NetworkManagement"
 $toolCategory = "Network"
 
 $fields = @(

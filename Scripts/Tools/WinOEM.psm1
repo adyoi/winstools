@@ -4,7 +4,7 @@
 #>
 
 $menuName = "Set OEM"
-$toolName = "SetOEM"
+$toolName = "WinOEM"
 $toolCategory = "Customization"
 
 $fields = @(

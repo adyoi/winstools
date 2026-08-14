@@ -79,11 +79,15 @@ function Invoke-SessionMonitor {
         }
     }
 
-    # Welcome dashboard: apply result from background load job when ready
+    # Welcome dashboard: apply result from background load runspace when ready
     $wjob = Get-AppState -Key 'WelcomeJob'
-    if ($wjob -and $wjob.State -ne 'Running') {
-        $html = Receive-Job -Job $wjob 2>&1
-        Remove-Job -Job $wjob -Force -ErrorAction SilentlyContinue
+    if ($wjob -and $wjob.Async.IsCompleted) {
+        try {
+            $html = $wjob.PowerShell.EndInvoke($wjob.Async) 2>&1
+        } catch {
+            $html = $null
+        }
+        try { $wjob.PowerShell.Dispose() } catch {}
         Set-AppState -Key 'WelcomeJob' -Value $null
         if ($html) {
             $wb = Get-AppState -Key 'WelcomeView'
@@ -94,10 +98,14 @@ function Invoke-SessionMonitor {
                     } else {
                         $wb.DocumentText = [string]$html
                     }
+                    Write-DebugLog "Welcome HTML loaded: $($html.Length) chars applied" -Category 'APP'
                 } catch {
                     try { $wb.DocumentText = [string]$html } catch {}
+                    Write-WarnLog "Welcome HTML gagal diterapkan: $_" -Category 'APP'
                 }
             }
+        } else {
+            Write-DebugLog "Welcome HTML kosong (runspace tanpa output)" -Category 'APP'
         }
     }
 

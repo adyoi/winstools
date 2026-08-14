@@ -5,7 +5,7 @@
 #>
 
 $menuName = "Disable Services"
-$toolName = "DisableServices"
+$toolName = "ServiceManagement"
 $toolCategory = "Maintenance"
 
 $fields = @()

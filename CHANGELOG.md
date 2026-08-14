@@ -17,8 +17,13 @@ Semua perubahan penting pada proyek dicatat di sini. Format mengikuti [Keep a Ch
 ### Diubah
 - Rename tool **Event Log** → **Clear Event Logs**.
 - Rename tool **Virus Scan** → **Virus Scan (ClamAV)**.
+- Rename modul tool agar konsisten dengan nama file (toolName = nama file): `CustomCommand` → `CommandManagement`, `DiskRepair` → `DiskManagement`, `NetworkDiagnostics` → `NetworkManagement`, `ProxyManager` → `ProxyManagement`, `DisableServices` → `ServiceManagement`, `GodMode` → `WinGodMode`, `SetOEM` → `WinOEM`.
+- Rename skrip build: `build.ps1` → `build-exe.ps1`, `set-versioninfo.ps1` → `setup-vi.ps1`, `installer.iss` → `config-installer.iss`.
 - CI build untuk push ke `main` memakai versi dari file `VERSION` (bukan hardcoded).
-- README: dokumentasi installer, VERSION default, env password, proxy list.
+- README: dokumentasi installer, VERSION default, env password, proxy list, tombol Options.
+
+### Ditambahkan (1.0.1)
+- **Tombol Options** (merah + separator) di menu utama: dialog dengan tab **Gui Config** (Environment Development/Production, Debug, LogLevel), **Gui Builder** (jalankan `build-exe.ps1`), **Gui Tester** (Pester / form test), **Check Update** (cek rilis GitHub `adyoi/winstools` + download), **Changelog**, dan **About**.
 
 ## [1.0.0] - 2026-08
 

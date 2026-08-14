@@ -5,7 +5,7 @@
 #>
 
 $menuName = "Disk Repair"
-$toolName = "DiskRepair"
+$toolName = "DiskManagement"
 $toolCategory = "Maintenance"
 
 $fields = @()

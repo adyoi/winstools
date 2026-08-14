@@ -5,7 +5,7 @@
 #>
 
 $menuName = "God Mode"
-$toolName = "GodMode"
+$toolName = "WinGodMode"
 $toolCategory = "Customization"
 
 $scriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }

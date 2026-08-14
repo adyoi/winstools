@@ -4,7 +4,7 @@
 #>
 
 $menuName = "Virus Scan (ClamAV)"
-$toolName = "VirusScan"
+$toolName = "VirusScanner"
 $toolCategory = "Security"
 
 $fields = @(
@@ -50,7 +50,7 @@ function Get-CustomUI {
     })
 
     return @{
-        Type = "VirusScan"
+        Type = "VirusScanner"
         SessionData = $sessionData
         Controls = @($btnCheck)
     }

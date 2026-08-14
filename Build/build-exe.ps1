@@ -3,7 +3,6 @@
     Build winstools: compile (ps2exe) + patch version resource + sign (Authenticode) + verify.
     Output per versi: Build\<shortVersion>\winstools.exe
     Folder hasil dibuat self-contained (Modules, Tools, Icons + skrip build ikut disalin).
-
 .PARAMETER PfxPath
     Path PFX sertifikat code signing. Kosongkan untuk memakai default CA\winstools.pfx di root project.
 
@@ -106,13 +105,13 @@ Invoke-PS2EXE -InputFile $inputScript -OutputFile $outputExe -IconFile $iconFile
 # ---------------------------------------------------------------------------
 # 2) Patch resource versi (bahasa Indonesia 0x0421, dsb.) -- SEBELUM signing
 # ---------------------------------------------------------------------------
-$verResScript = Join-Path $root 'set-versioninfo.ps1'
+$verResScript = Join-Path $root 'setup-vi.ps1'
 if (Test-Path $verResScript) {
     & $verResScript -FilePath $outputExe -FileDescription $metaTitle -FileVersion $metaVersion `
         -ProductName $metaProduct -ProductVersion $metaVersion -CompanyName $metaCompany `
         -LegalCopyright $metaCopyright -Comments $metaDescription -Language 0x0421
 } else {
-    Write-Warning "[build] set-versioninfo.ps1 tidak ditemukan - resource versi dilewati."
+    Write-Warning "[build] setup-vi.ps1 tidak ditemukan - resource versi dilewati."
 }
 
 # ---------------------------------------------------------------------------

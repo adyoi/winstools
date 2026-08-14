@@ -4,11 +4,11 @@
 
 ![Build status](https://github.com/adyoi/winstools/actions/workflows/build.yml/badge.svg)
 
-**Status rilis:** `1.0.0.0` — build tersedia di [`Build\1.0\`](Build/1.0/winstools.exe), ditandatangani (Authenticode SHA256 + timestamp) dan valid.
+**Status rilis:** `1.0.1` (belum dirilis) — build `1.0.0.0` tersedia di [`Build\1.0\`](Build/1.0/winstools.exe), ditandatangani (Authenticode SHA256 + timestamp) dan valid.
 
 > **Data runtime** (`CustomCommands.json`, log Virus Scan) tersimpan di **`%LOCALAPPDATA%\Winstools`** — bukan di folder exe, sehingga tidak tertimpa saat rebuild.
 
-![Winstools screenshot](winstools.png)
+![Winstools screenshot](screenshot.png)
 
 ---
 
@@ -34,6 +34,7 @@
 - **Elevasi otomatis** — meminta izin Administrator saat dijalankan.
 - **Konfirmasi tool berisiko** — Clear DNS, Disk Repair, Disable Services, Win Update Reset, Set OEM, dan Proxy Manager meminta konfirmasi Yes/No sebelum dijalankan.
 - **Proxy Manager dengan daftar proxy** — dropdown proxy dari [iplocate/free-proxy-list](https://github.com/iplocate/free-proxy-list) + tombol Refresh.
+- **Tombol Options** — akses cepat ke pengaturan, build, test, cek update, dan informasi aplikasi (tab Gui Config / Gui Builder / Gui Tester / Check Update / Changelog / About).
 - **Release ter-tanda-tangan** — setiap build ditandatangani sertifikat code signing (email `adyoix@gmail.com`) dan di-timestamp.
 
 ## Persyaratan
@@ -54,7 +55,7 @@
 powershell -ExecutionPolicy Bypass -File Scripts\Main.ps1
 ```
 
-Mode log DEBUG: ubah `Initialize-Config -Environment 'Development'` pada `Scripts\Main.ps1`.
+Mode log DEBUG: atur Environment/Debug melalui tab **Gui Config** di tombol **Options** (atau ubah `Initialize-Config -Environment 'Development'` pada `Scripts\Main.ps1`).
 
 ### Dari release (`Build\<versi>\winstools.exe` atau installer)
 
@@ -67,7 +68,7 @@ Folder hasil build bersifat **self-contained** — cukup double-click `winstools
 Test otomatis memakai **Pester** (3.4 — terbundel di Windows PowerShell 5.1 — atau 5.x, kompatibel keduanya).
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-Pester -Script .\Test"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-Pester -Script .\Test\pester_test.ps1"
 ```
 
 Yang diuji:
@@ -75,7 +76,7 @@ Yang diuji:
 - **Sintaks** semua skrip & modul (`Scripts\`, `Build\`).
 - **Modul tool** — setiap `Scripts\Tools\*.psm1` dapat di-import, konfigurasinya valid, dan **skema Fields** benar.
 - **Konsistensi runtime** — `CustomCommands.json` berada di `%LOCALAPPDATA%\Winstools`.
-- **Metadata build** — `build.ps1` memakai `-Version`/file `VERSION`, env `WINSTOOLS_PFX_PASSWORD`, dan timestamp DigiCert.
+- **Metadata build** — `build-exe.ps1` memakai `-Version`/file `VERSION`, env `WINSTOOLS_PFX_PASSWORD`, dan timestamp DigiCert.
 - **Roundtrip CustomCommands** — save/read/remove dengan backup & restore file user.
 - **Integritas build** — exe self-contained (`Modules\`, `Tools\`, `Icons\`) dan versinya sesuai `VERSION`.
 - **Tool berisiko** — 6 tool destruktif wajib menetapkan `RequiresConfirm = true`.
@@ -83,7 +84,7 @@ Yang diuji:
 Test GUI manual (menampilkan form utama; memerlukan sesi interaktif):
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\Test\test_form.ps1   -AutoClose 5   # smoke test
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Test\form_test.ps1   -AutoClose 5   # smoke test
 powershell -NoProfile -ExecutionPolicy Bypass -File .\Test\close_test.ps1  -Scenario stuck # tutup bersih tanpa proses tersisa
 ```
 
@@ -91,7 +92,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Test\close_test.ps1  -Scen
 
 ## Tutorial Build (Stable)
 
-> Jalur build resmi: **`Build\build.ps1`** — satu perintah untuk compile, patch metadata versi, tanda tangan digital, dan verifikasi. Diuji pada PowerShell 5.1.
+> Jalur build resmi: **`Build\build-exe.ps1`** — satu perintah untuk compile, patch metadata versi, tanda tangan digital, dan verifikasi. Diuji pada PowerShell 5.1.
 
 ### 1. Persiapan sekali pakai (per mesin developer)
 
@@ -131,23 +132,23 @@ Setiap perubahan di `Scripts\` (Main.ps1, Modules, Tools) → jalankan:
 
 ```powershell
 cd Build
-powershell -ExecutionPolicy Bypass -File .\build.ps1
+powershell -ExecutionPolicy Bypass -File .\build-exe.ps1
 ```
 
-Versi diambil dari **file `VERSION`** di root project (default `1.0.0`); bisa di-override dengan parameter `-Version` (format `1.0` atau `1.0.0.0`, otomatis dinormalisasi ke 4 bagian):
+Versi diambil dari **file `VERSION`** di root project (default `1.0.1`); bisa di-override dengan parameter `-Version` (format `1.0` atau `1.0.0.0`, otomatis dinormalisasi ke 4 bagian):
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\build.ps1                  # versi dari file VERSION
-powershell -ExecutionPolicy Bypass -File .\build.ps1 -Version 1.0     # override
+powershell -ExecutionPolicy Bypass -File .\build-exe.ps1                  # versi dari file VERSION
+powershell -ExecutionPolicy Bypass -File .\build-exe.ps1 -Version 1.0     # override
 # → Build\1.0\winstools.exe (versi 1.0.0.0)
 ```
 
 Password PFX: set env `WINSTOOLS_PFX_PASSWORD` (tanpa env, fallback password dev hanya untuk `CA\winstools.pfx` lokal — penting untuk CI/produksi).
 
-Alur build (`build.ps1`):
+Alur build (`build-exe.ps1`):
 
 1. **Compile** `Scripts\Main.ps1` → `Build\<major.minor>\winstools.exe` (ps2exe, tanpa console window).
-2. **Patch resource versi** — File Description, File Version, Product Name, Product Version, Company Name, Copyright, **Language: Indonesian (0x0421)**.
+2. **Patch resource versi** — File Description, File Version, Product Name, Product Version, Company Name, Copyright, **Language: Indonesian (0x0421)** (via `setup-vi.ps1`).
 3. **Sign** dengan `CA\winstools.pfx` (SHA256 + timestamp DigiCert).
 4. **Copy runtime** — `Modules\`, `Tools\`, `Icons\` disalin ke folder versi agar self-contained.
 5. **Verify** — status tanda tangan ditampilkan.
@@ -156,7 +157,7 @@ Output:
 
 ```
 Build\
-├── build.ps1, build-installer.ps1, installer.iss, setup-ca.ps1, set-versioninfo.ps1   # tooling
+├── build-exe.ps1, build-installer.ps1, config-installer.iss, setup-ca.ps1, setup-vi.ps1   # tooling
 └── <major.minor>\
     ├── winstools.exe        # aplikasi rilis
     ├── winstools-installer.exe   # installer (opsional, lihat bagian 3)
@@ -181,10 +182,10 @@ Installer mengemas `winstools.exe` + `Modules\`, `Tools\`, `Icons\` ke `C:\Progr
 
 ### 4. Mengganti versi
 
-Cukup beri parameter `-Version` saat build — **tidak perlu mengubah isi build.ps1**:
+Cukup beri parameter `-Version` saat build — **tidak perlu mengubah isi build-exe.ps1**:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\build.ps1 -Version 1.3.0.0
+powershell -ExecutionPolicy Bypass -File .\build-exe.ps1 -Version 1.3.0.0
 # → output di Build\1.3\winstools.exe
 ```
 
@@ -201,14 +202,7 @@ Atau: klik kanan `winstools.exe` → **Properties** → tab **Digital Signatures
 
 ### Alternatif packaging (opsional)
 
-Konfigurasi `Build\Package.psd1` untuk PowerShellProTools:
-
-```powershell
-Import-Module PowerShellProTools
-Merge-Script -ConfigFile .\Package.psd1
-```
-
-> Jalur **ps2exe (build.ps1) adalah jalur resmi & teruji**; metode ini hanya cadangan.
+> Jalur **ps2exe (build-exe.ps1) adalah jalur resmi & teruji**; metode PowerShellProTools tidak lagi dipertahankan.
 
 ---
 
@@ -218,10 +212,11 @@ Merge-Script -ConfigFile .\Package.psd1
 winstools/
 ├── .github/workflows/       # CI: build dari tag v* + test Pester + artifact
 ├── Build/                  # tooling build + hasil per versi
-│   ├── build.ps1           # build utama: compile + versi + sign + verify
+│   ├── build-exe.ps1       # build utama: compile + versi + sign + verify
+│   ├── build-installer.ps1 # build installer Inno Setup
+│   ├── config-installer.iss # konfigurasi Inno Setup
 │   ├── setup-ca.ps1        # buat CA & sertifikat code signing (sekali)
-│   ├── set-versioninfo.ps1 # patch resource versi (bahasa Indonesia, dsb.)
-│   ├── Package.psd1        # konfigurasi alternatif (PowerShellProTools)
+│   ├── setup-vi.ps1        # patch resource versi (bahasa Indonesia, dsb.)
 │   └── <major.minor>/      # hasil rilis (self-contained, tidak di-commit)
 │       ├── winstools.exe
 │       ├── Modules/
@@ -231,11 +226,12 @@ winstools/
 ├── Icons/                  # sumber ikon aplikasi
 ├── Scripts/                # source code (development)
 │   ├── Main.ps1            # entry point
-│   ├── Modules/            # App, Config, Features, Session, UI
+│   ├── Modules/            # App, Config, Features, Options, Session, UI
 │   └── Tools/              # satu modul per tool
 └── Test/                   # uji otomatis (Pester) + GUI smoke test
-    ├── Winstools.Tests.ps1 # suite Pester utama
-    ├── test_form.ps1       # smoke test form utama
+    ├── pester_test.ps1     # suite Pester utama
+    ├── form_test.ps1       # smoke test form utama
+    ├── capture_test.ps1    # test penangkapan output session
     └── close_test.ps1      # regression: penutupan bersih tanpa proses tersisa
 ```
 
@@ -247,7 +243,7 @@ winstools/
 2. Jalankan suite Pester; gagal → pipeline gagal.
 3. Unggah `Build\*\` sebagai artifact rilis.
 
-> Sertifikat signing tidak tersedia di CI (rahasia lokal) — build CI tidak ditandatangani. Build rilis resmi tetap lewat mesin developer dengan `build.ps1`.
+> Sertifikat signing tidak tersedia di CI (rahasia lokal) — build CI tidak ditandatangani. Build rilis resmi tetap lewat mesin developer dengan `build-exe.ps1`.
 
 ## Troubleshooting
 
@@ -257,7 +253,7 @@ winstools/
 | `winstools.exe` terkunci saat build | Tutup aplikasi yang sedang berjalan, lalu ulangi build |
 | Timestamp gagal | Pastikan koneksi internet ke `http://timestamp.digicert.com` |
 | `openssl.exe` tidak ditemukan | Install OpenSSL dan pastikan masuk `PATH` |
-| EXE tidak menemukan modul | Pastikan `Modules\` & `Tools\` berada di folder yang sama dengan EXE (build.ps1 melakukannya otomatis) |
+| EXE tidak menemukan modul | Pastikan `Modules\` & `Tools\` berada di folder yang sama dengan EXE (build-exe.ps1 melakukannya otomatis) |
 
 ## Keamanan
 
@@ -267,7 +263,7 @@ winstools/
 
 ## Kontributor
 
-Daftar kontributor proyek ini — lihat [CONTRIBUTORS.md](CONTRIBUTORS.md).
+Daftar kontributor proyek ini — lihat riwayat commit pada repositori GitHub.
 
 ## Lisensi
 

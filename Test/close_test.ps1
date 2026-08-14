@@ -46,8 +46,9 @@ $form.Add_FormClosing({
         }
     }
     $wjob = $appState.WelcomeJob
-    if ($wjob) {
-        Stop-SessionJob -Job $wjob
+    if ($wjob -and $wjob.PowerShell) {
+        try { $wjob.PowerShell.Stop() } catch {}
+        try { $wjob.PowerShell.Dispose() } catch {}
     }
     [System.Windows.Forms.Application]::Exit()
 })

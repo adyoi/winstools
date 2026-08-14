@@ -37,7 +37,7 @@ if (-not $isAdmin) {
         } catch {}
     }
     if (-not $scriptPath -and $PSScriptRoot) { $scriptPath = Join-Path $PSScriptRoot "Main.ps1" }
-    
+
     try {
         if ($scriptPath -and (Test-Path $scriptPath)) {
             if ($scriptPath -match '\.exe$' -and $scriptPath -notmatch '(powershell|pwsh)\.exe$') {
@@ -59,6 +59,7 @@ Import-Module (Join-Path $script:ModuleRoot "Modules\App.psm1") -Force
 Import-Module (Join-Path $script:ModuleRoot "Modules\UI.psm1") -Force
 Import-Module (Join-Path $script:ModuleRoot "Modules\Session.psm1") -Force
 Import-Module (Join-Path $script:ModuleRoot "Modules\Features.psm1") -Force
+Import-Module (Join-Path $script:ModuleRoot "Modules\Options.psm1") -Force
 
 Write-InfoLog "Application starting" -Category 'APP'
 
@@ -109,6 +110,17 @@ Start-GlobalTimer
 $features = Get-Features
 $yPos = 15
 
+# Options button (merah) + separator di atas tombol tools
+$btnOptions = New-OptionsButton
+$btnOptions.Location = [System.Drawing.Point]::new(12, $yPos)
+$menuScrollPanel.Controls.Add($btnOptions)
+$yPos += 42
+
+$optSeparator = New-OptionsSeparator
+$optSeparator.Location = [System.Drawing.Point]::new(12, $yPos + 4)
+$menuScrollPanel.Controls.Add($optSeparator)
+$yPos += 14
+
 foreach ($feat in $features) {
     $btn = New-MenuButton -Text $feat.Name
     $btn.Location = [System.Drawing.Point]::new(12, $yPos)
@@ -146,8 +158,9 @@ $form.Add_FormClosing({
         }
     }
     $wjob = $appState.WelcomeJob
-    if ($wjob) {
-        Stop-SessionJob -Job $wjob
+    if ($wjob -and $wjob.PowerShell) {
+        try { $wjob.PowerShell.Stop() } catch {}
+        try { $wjob.PowerShell.Dispose() } catch {}
     }
     [System.Windows.Forms.Application]::Exit()
 })
