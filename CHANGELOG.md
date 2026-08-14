@@ -29,8 +29,18 @@ Semua perubahan penting pada proyek dicatat di sini. Format mengikuti [Keep a Ch
 - Options: output log tidak lagi tertimpa tombol (layout panel atas + `Dock=Fill` di tab Builder/Tester/Update).
 - Options Gui Config: "Muat Nilai Aktif" kini benar menampilkan nilai (`SelectedIndex`, tanpa menimpa oleh handler Environment).
 - Options Gui Tester: runner kompatibel Pester 5 (`-Path`) dan 3.x (`-Script`); output `Write-Host` tertangkap via `*>&1`.
-- capture_test.ps1: path root tidak lagi di-hardcode (dipakai `$PSScriptRoot`).
-- Versi aplikasi (judul form, header menu, welcome) dibaca dinamis dari file `VERSION`.
+- Capture test: path root tidak lagi di-hardcode (dipakai `$PSScriptRoot`).- Versi aplikasi (judul form, header menu, welcome) dibaca dinamis dari file `VERSION`.
+- Options: dialog kini tidak lagi memunculkan error "Cannot bind parameter 'Path'..." saat dibuka dari EXE terinstal (fallback `Get-ProjectRoot`/`Get-AppVersion` + guard di semua pemakai).
+- Proxy Management: tombol **Load** tidak lagi stuck pada "Loading..." bila unduhan gagal/crash (try/finally + deteksi error), dan kini menampilkan pesan berhasil/gagal yang jelas.
+- Command Management: field Name kini dropdown terisi command tersimpan; tombol **Refresh**, **Load**, dan **Load ALL** untuk melihat seluruh daftar command.
+- Virus Scanner: tambah tombol **Update Databases** (menjalankan `freshclam.exe`) di samping **Cek ClamAV**.
+- Win OEM: logo OEM default memakai `Icons\winstools.bmp` (bukan `D:\logo.bmp`), resolve otomatis dari source maupun EXE terinstal; `build-exe.ps1` ikut menyalin bmp tersebut.
+- UI: tombol **RUN** dan **CLEAR** kini sama ukurannya; variabel teks/ukuran/perilaku (bahasa & layout) dideklarasikan di awal `UI.psm1` agar mudah di-custom.
+- Start-RedirectProcess: hapus parameter yang tidak valid di PowerShell 5.1 (`UseShellExecute`/`CreateNoWindow`) → pakai `NoNewWindow` (untuk pembacaan output build/test/update di Gui Options).
+
+### Diubah (uji)
+- Rename file test mengikuti standard Pester: suite utama → **`Pester.Tests.ps1`** (ter-discover otomatis), skrip GUI → **`form_test.ps1`**, **`close_test.ps1`**, **`capture_test.ps1`**, **`button_test.ps1`**, **`config_test.ps1`** (tidak ikut ter-discover Pester karena butuh sesi interaktif). Referensi di CI, README, dan Gui Tester ikut diperbarui.
+- Options Gui Config: dialog kini memuat & menampilkan nilai aktif `Get-Config` saat dibuka (tidak lagi menampilkan default), sehingga perubahan config tetap terlihat setelah dialog ditutup dan dibuka lagi.
 
 ## [1.0.0] - 2026-08
 

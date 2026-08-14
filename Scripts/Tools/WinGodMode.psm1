@@ -4,7 +4,7 @@
     Windows Settings shortcuts + God Mode matching settings.bat
 #>
 
-$menuName = "God Mode"
+$menuName = "Win God Mode"
 $toolName = "WinGodMode"
 $toolCategory = "Customization"
 

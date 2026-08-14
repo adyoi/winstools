@@ -58,9 +58,9 @@ jobs:
           $p = Get-Module Pester -ListAvailable | Sort-Object Version -Descending | Select-Object -First 1
           Write-Host "Pester: $($p.Version)"
           if ($p.Version -ge [version]'5.0') {
-            $r = Invoke-Pester -Path .\Test\pester_test.ps1 -PassThru
+            $r = Invoke-Pester -Path .\Test\Pester.Tests.ps1 -PassThru
           } else {
-            $r = Invoke-Pester -Script .\Test\pester_test.ps1 -PassThru
+            $r = Invoke-Pester -Script .\Test\Pester.Tests.ps1 -PassThru
           }
           Write-Host ("Passed: {0}  Failed: {1}" -f $r.PassedCount, $r.FailedCount)
           if ($r.FailedCount -gt 0) { exit 1 }

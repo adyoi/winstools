@@ -33,11 +33,35 @@ $text_lblNoParam = ""
 $text_btnRun     = "RUN"
 $text_btnClear   = "CLEAR"
 
+# ---------------------------------------------------------------------------
+# Konfigurasi yang bisa di-custom di sini (bahasa / layout / perilaku).
+# CATATAN: variabel yang memanggil fungsi (mis. $text_menu di atas) WAJIB
+# dideklarasikan DI BAWAH definisi fungsi tersebut, karena assignment
+# dievaluasi saat skrip berjalan (bukan saat di-parse).
+# ---------------------------------------------------------------------------
+# --- string (diterjemahkan ke bahasa lain) ---
+$text_statusRunning = "RUNNING"
+$text_statusStopped = "STOPPED"
+
+# --- int (ukuran tombol / tinggi panel) ---
+$size_btnWidth      = 90
+$size_btnHeight     = 32
+$size_inputPanelH   = 100
+$size_menuWidth     = 240
+$size_menuHeaderH   = 70
+$size_outputBarH    = 24
+
+# --- bool (perilaku) ---
+$opt_allowResize    = $true
+$opt_autoScrollRun  = $true
+$opt_confirmClose   = $false
+
 function New-MainForm {
     $form = [System.Windows.Forms.Form]::new()
     $form.Text = $text_form
     $form.Size = [System.Drawing.Size]::new(1024, 680)
-    $form.MinimumSize = [System.Drawing.Size]::new(1000, 700)
+    $form.MinimumSize = if ($opt_allowResize) { [System.Drawing.Size]::new(1000, 700) } else { $form.Size }
+    $form.FormBorderStyle = if ($opt_allowResize) { [System.Windows.Forms.FormBorderStyle]::Sizable } else { [System.Windows.Forms.FormBorderStyle]::FixedSingle }
     $form.StartPosition = "CenterScreen"
     $form.BackColor = [System.Drawing.Color]::FromArgb(30, 30, 30)
     return $form
@@ -46,14 +70,14 @@ function New-MainForm {
 function New-MenuPanel {
     $panel = [System.Windows.Forms.Panel]::new()
     $panel.Dock = [System.Windows.Forms.DockStyle]::Left
-    $panel.Width = 240
+    $panel.Width = $size_menuWidth
     $panel.BackColor = [System.Drawing.Color]::FromArgb(37, 37, 38)
     return $panel
 }
 
 function New-MenuHeader {
     $header = [System.Windows.Forms.Panel]::new()
-    $header.Height = 70
+    $header.Height = $size_menuHeaderH
     $header.Dock = [System.Windows.Forms.DockStyle]::Top
     $header.BackColor = [System.Drawing.Color]::FromArgb(45, 45, 48)
 
@@ -583,7 +607,7 @@ function New-SessionPanel {
     $panelInput.AutoScroll = $true
 
     $lblTitle = [System.Windows.Forms.Label]::new()
-    $lblTitle.Text = "SESSION: $FeatureName"
+    $lblTitle.Text = $FeatureName
     $lblTitle.Font = [System.Drawing.Font]::new("Segoe UI", 11, [System.Drawing.FontStyle]::Bold)
     $lblTitle.ForeColor = [System.Drawing.Color]::FromArgb(40, 40, 40)
     $lblTitle.Location = [System.Drawing.Point]::new(20, 12)
@@ -592,7 +616,7 @@ function New-SessionPanel {
 
     $btnRun = [System.Windows.Forms.Button]::new()
     $btnRun.Text = $text_btnRun 
-    $btnRun.Size = [System.Drawing.Size]::new(100, 32)
+    $btnRun.Size = [System.Drawing.Size]::new($size_btnWidth, $size_btnHeight)
     $btnRun.Location = [System.Drawing.Point]::new(20, 44)
     $btnRun.BackColor = [System.Drawing.Color]::FromArgb(0, 122, 204)
     $btnRun.ForeColor = [System.Drawing.Color]::White
@@ -604,8 +628,8 @@ function New-SessionPanel {
 
     $btnClear = [System.Windows.Forms.Button]::new()
     $btnClear.Text = $text_btnClear
-    $btnClear.Size = [System.Drawing.Size]::new(80, 32)
-    $btnClear.Location = [System.Drawing.Point]::new(130, 44)
+    $btnClear.Size = [System.Drawing.Size]::new($size_btnWidth, $size_btnHeight)
+    $btnClear.Location = [System.Drawing.Point]::new(20 + $size_btnWidth + 10, 44)
     $btnClear.BackColor = [System.Drawing.Color]::FromArgb(68, 68, 70)
     $btnClear.ForeColor = [System.Drawing.Color]::White
     $btnClear.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat

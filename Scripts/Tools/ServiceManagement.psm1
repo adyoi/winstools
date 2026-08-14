@@ -4,7 +4,7 @@
     Disables selected Windows services matching services.bat
 #>
 
-$menuName = "Disable Services"
+$menuName = "Services Management"
 $toolName = "ServiceManagement"
 $toolCategory = "Maintenance"
 

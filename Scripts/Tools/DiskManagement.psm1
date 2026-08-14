@@ -4,7 +4,7 @@
     Full disk repair suite matching disk.bat
 #>
 
-$menuName = "Disk Repair"
+$menuName = "Disk Management"
 $toolName = "DiskManagement"
 $toolCategory = "Maintenance"
 

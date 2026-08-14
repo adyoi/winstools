@@ -4,7 +4,7 @@
     Ping, tracert, nslookup, port check and other network diagnostics
 #>
 
-$menuName = "Network Diagnostics"
+$menuName = "Network Management"
 $toolName = "NetworkManagement"
 $toolCategory = "Network"
 

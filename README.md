@@ -87,11 +87,13 @@ Folder hasil build bersifat **self-contained** — cukup double-click `winstools
 
 ## Cara Menjalankan Test
 
-Test otomatis memakai **Pester** (3.4 — terbundel di Windows PowerShell 5.1 — atau 5.x, kompatibel keduanya).
+Test otomatis memakai **Pester** (3.4 — terbundel di Windows PowerShell 5.1 — atau 5.x, kompatibel keduanya). File suite mengikuti standard Pester `*.Tests.ps1` sehingga ter-discover otomatis dari direktori `Test`.
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-Pester -Script .\Test\pester_test.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-Pester -Path .\Test\Pester.Tests.ps1"
 ```
+
+> Catatan: Pester 5 hanya men-discover file bernama `*.Tests.ps1` (jamak) secara otomatis; file `*.Test.ps1` (tunggal) tidak. Karena itu suite bernama `Pester.Tests.ps1`, sedangkan skrip GUI diberi akhiran `_test.ps1` agar tidak ikut ter-discover sebagai test.
 
 Yang diuji:
 
@@ -106,8 +108,11 @@ Yang diuji:
 Test GUI manual (menampilkan form utama; memerlukan sesi interaktif):
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\Test\form_test.ps1   -AutoClose 5   # smoke test
-powershell -NoProfile -ExecutionPolicy Bypass -File .\Test\close_test.ps1  -Scenario stuck # tutup bersih tanpa proses tersisa
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Test\form_test.ps1    -AutoClose 5    # smoke test form
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Test\close_test.ps1   -Scenario stuck # tutup bersih tanpa proses tersisa
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Test\capture_test.ps1                 # tangkap screenshot winstools.png
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Test\button_test.ps1  -AutoClose 3    # test tombol Options
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Test\config_test.ps1                  # test tab Gui Config
 ```
 
 ---
@@ -251,10 +256,12 @@ winstools/
 │   ├── Modules/            # App, Config, Features, Options, Session, UI
 │   └── Tools/              # satu modul per tool
 └── Test/                   # uji otomatis (Pester) + GUI smoke test
-    ├── pester_test.ps1     # suite Pester utama
+    ├── Pester.Tests.ps1    # suite Pester utama (standard *.Tests.ps1)
     ├── form_test.ps1       # smoke test form utama
-    ├── capture_test.ps1    # test penangkapan output session
-    └── close_test.ps1      # regression: penutupan bersih tanpa proses tersisa
+    ├── capture_test.ps1    # test penangkapan screenshot
+    ├── close_test.ps1      # regression: penutupan bersih tanpa proses tersisa
+    ├── button_test.ps1     # test tombol Options + dialog
+    └── config_test.ps1     # test tab Gui Config (load & apply nilai)
 ```
 
 ## Continuous Integration

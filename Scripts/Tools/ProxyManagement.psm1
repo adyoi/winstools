@@ -7,7 +7,7 @@
     Jika unduhan terpotong di tengah (Truncated), data parsial yang sudah turun tetap dipakai, bukan gagal total.
 #>
 
-$menuName = "Proxy Manager"
+$menuName = "Proxy Management"
 $toolName = "ProxyManagement"
 $toolCategory = "Network"
 
@@ -183,22 +183,32 @@ function Get-CustomUI {
         Write-SessionLog -OutputBox $d.OutputBox -Message "Mengunduh daftar proxy dari $proxyListSource ..." -Type "INFO"
 
         $state = [hashtable]::Synchronized(@{
-            Progress = -1; Received = 0; Total = 0; Truncated = $false; Items = @(); Done = $false
+            Progress = -1; Received = 0; Total = 0; Truncated = $false; Items = @(); Done = $false; Error = $null
         })
         $d.State = $state
 
         $ps = [System.Management.Automation.PowerShell]::Create()
         $d.Ps = $ps
         $script = "param(`$Url, `$Mod, `$State)
-Import-Module -Name `$Mod -Force
-`$r = Get-ProxyListStream -Url `$Url -ProgressCallback { param(`$Bytes, `$Total, `$Percent)
-    `$State.Progress = `$Percent; `$State.Received = `$Bytes; `$State.Total = `$Total
-}
-`$State.Truncated = `$r.Truncated
-`$State.Items = @(ConvertTo-ProxyList `$r.Content)
-`$State.Done = `$true"
+try {
+    Import-Module -Name `$Mod -Force
+    `$r = Get-ProxyListStream -Url `$Url -ProgressCallback { param(`$Bytes, `$Total, `$Percent)
+        `$State.Progress = `$Percent; `$State.Received = `$Bytes; `$State.Total = `$Total
+    }
+    `$State.Truncated = `$r.Truncated
+    `$State.Items = @(ConvertTo-ProxyList `$r.Content)
+} catch {
+    `$State.Error = `$_.Exception.Message
+} finally {
+    `$State.Done = `$true
+}"
         $null = $ps.AddScript($script).AddArgument($proxyListUrl).AddArgument($d.UiFile).AddArgument($state)
-        $d.Async = $ps.BeginInvoke()
+        try {
+            $d.Async = $ps.BeginInvoke()
+        } catch {
+            $state.Error = $_.Exception.Message
+            $state.Done = $true
+        }
 
         $timer = [System.Windows.Forms.Timer]::new()
         $timer.Interval = 100
@@ -212,7 +222,14 @@ Import-Module -Name `$Mod -Force
             } else {
                 $d.ProgressBar.Style = [System.Windows.Forms.ProgressBarStyle]::Marquee
             }
-            if (-not $st.Done) { return }
+            if (-not $st.Done) {
+                if ($d.Async -and $d.Async.IsCompleted) {
+                    $st.Error = "Runspace berakhir tanpa hasil (kemungkinan crash)."
+                    $st.Done = $true
+                } else {
+                    return
+                }
+            }
 
             $timer.Stop()
             $d.ProgressBar.Style = [System.Windows.Forms.ProgressBarStyle]::Continuous
@@ -220,23 +237,31 @@ Import-Module -Name `$Mod -Force
             $d.BtnLoad.Enabled = $true
             $d.BtnLoad.Text = "Load"
 
-            $combo = $d.Combo
-            $combo.Items.Clear()
-            if ($st.Items.Count -gt 0) {
-                $combo.Items.AddRange([string[]]$st.Items)
-                $combo.Text = [string]$st.Items[0]
-                $msg = "Daftar proxy dimuat ($($st.Items.Count) item)"
-                if ($st.Truncated) { $msg += " (unduhan terpotong - data parsial)" }
-                Write-SessionLog -OutputBox $d.OutputBox -Message "$msg dari $proxyListSource" -Type $(if ($st.Truncated) { 'WARNING' } else { 'SUCCESS' })
-            } else {
+            if ($st.Error) {
+                $combo = $d.Combo
+                $combo.Items.Clear()
                 $combo.Items.AddRange([string[]]@($defaultProxy))
                 $combo.Text = $defaultProxy
-                Write-SessionLog -OutputBox $d.OutputBox -Message "Tidak ada proxy valid yang diperoleh (unduhan gagal/terpotong). Memakai default." -Type "WARNING"
+                Write-SessionLog -OutputBox $d.OutputBox -Message "Gagal memuat daftar proxy: $($st.Error). Memakai default." -Type "ERROR"
+            } else {
+                $combo = $d.Combo
+                $combo.Items.Clear()
+                if ($st.Items.Count -gt 0) {
+                    $combo.Items.AddRange([string[]]$st.Items)
+                    $combo.Text = [string]$st.Items[0]
+                    $msg = "Daftar proxy dimuat ($($st.Items.Count) item)"
+                    if ($st.Truncated) { $msg += " (unduhan terpotong - data parsial)" }
+                    Write-SessionLog -OutputBox $d.OutputBox -Message "$msg dari $proxyListSource" -Type $(if ($st.Truncated) { 'WARNING' } else { 'SUCCESS' })
+                } else {
+                    $combo.Items.AddRange([string[]]@($defaultProxy))
+                    $combo.Text = $defaultProxy
+                    Write-SessionLog -OutputBox $d.OutputBox -Message "Tidak ada proxy valid yang diperoleh (unduhan gagal/terpotong). Memakai default." -Type "WARNING"
+                }
             }
 
             if ($d.Async) {
                 try { $d.Async.AsyncWaitHandle.WaitOne(500) | Out-Null } catch {}
-                $d.Ps.Dispose()
+                try { $d.Ps.Dispose() } catch {}
             }
             $d.Async = $null
             $d.Ps = $null

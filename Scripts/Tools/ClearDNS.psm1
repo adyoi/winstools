@@ -124,7 +124,10 @@ function Invoke-ToolAction {
     Invoke-Cmd "netsh int ip reset all"
     Invoke-Cmd "netsh int ip reset resetlog.txt"
     Invoke-Cmd "netsh winhttp reset proxy"
-    Invoke-Cmd "ipconfig /flushdns"
+    Invoke-Cmd "netsh advfirewall reset"
+    Invoke-Cmd "ipconfig /release"
+    Invoke-Cmd "ipconfig /renew"
+    Invoke-Cmd "ipconfig /registerdns"
 
     Write-Output "DNS dan jaringan berhasil direset. Restart komputer disarankan agar perubahan diterapkan."
 }

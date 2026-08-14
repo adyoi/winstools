@@ -4,12 +4,12 @@
     Custom commands with save/load/execute functionality
 #>
 
-$menuName = "Custom Command"
+$menuName = "Command Manager"
 $toolName = "CommandManagement"
 $toolCategory = "Advanced"
 
 $fields = @(
-    @{ Name = "Name";     Type = "Text";     Default = ""; Label = "Command Name" }
+    @{ Name = "Name";     Type = "Combo";    Default = ""; Label = "Command Name"; Options = @() }
     @{ Name = "Command";  Type = "TextArea"; Default = ""; Label = "Command" }
 )
 
@@ -101,13 +101,41 @@ function Get-CustomUI {
         if (-not $name) { Write-SessionLog -OutputBox $sess.OutputBox -Message "Nama command kosong." -Type "WARNING"; return }
         if (-not $cmd)  { Write-SessionLog -OutputBox $sess.OutputBox -Message "Command kosong." -Type "WARNING"; return }
         Save-CustomCommand $name $cmd | ForEach-Object { Write-SessionLog -OutputBox $sess.OutputBox -Message $_ -Type "INFO" }
+        $all = @(Read-CustomCommands).Keys | Sort-Object
+        $combo = $sess.Inputs['Name']
+        $combo.Items.Clear()
+        if ($all.Count -gt 0) { $combo.Items.AddRange([string[]]$all) }
+        $combo.Text = $name
+    })
+
+    $btnRefresh = [System.Windows.Forms.Button]::new()
+    $btnRefresh.Text = "Refresh"
+    $btnRefresh.Size = [System.Drawing.Size]::new(80, 28)
+    $btnRefresh.Location = [System.Drawing.Point]::new(350, 47)
+    $btnRefresh.BackColor = [System.Drawing.Color]::FromArgb(68, 68, 70)
+    $btnRefresh.ForeColor = [System.Drawing.Color]::White
+    $btnRefresh.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+    $btnRefresh.FlatAppearance.BorderSize = 0
+    $btnRefresh.Font = [System.Drawing.Font]::new("Segoe UI", 9)
+    $btnRefresh.Cursor = [System.Windows.Forms.Cursors]::Hand
+    $btnRefresh.Tag = $sessionData
+    $btnRefresh.Add_Click({
+        param($s, $e)
+        $sess = $s.Tag
+        $all = @(Read-CustomCommands).Keys | Sort-Object
+        $combo = $sess.Inputs['Name']
+        $prev = $combo.Text
+        $combo.Items.Clear()
+        if ($all.Count -gt 0) { $combo.Items.AddRange([string[]]$all) }
+        $combo.Text = $prev
+        Write-SessionLog -OutputBox $sess.OutputBox -Message "Daftar command dimuat ($($all.Count) item) dari CustomCommands.json." -Type "SUCCESS"
     })
 
     $btnLoad = [System.Windows.Forms.Button]::new()
-    $btnLoad.Text = "Load Command"
-    $btnLoad.Size = [System.Drawing.Size]::new(110, 28)
-    $btnLoad.Location = [System.Drawing.Point]::new(350, 47)
-    $btnLoad.BackColor = [System.Drawing.Color]::FromArgb(68, 68, 70)
+    $btnLoad.Text = "Load"
+    $btnLoad.Size = [System.Drawing.Size]::new(70, 28)
+    $btnLoad.Location = [System.Drawing.Point]::new(440, 47)
+    $btnLoad.BackColor = [System.Drawing.Color]::FromArgb(0, 122, 204)
     $btnLoad.ForeColor = [System.Drawing.Color]::White
     $btnLoad.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
     $btnLoad.FlatAppearance.BorderSize = 0
@@ -128,10 +156,40 @@ function Get-CustomUI {
         }
     })
 
+    $btnLoadAll = [System.Windows.Forms.Button]::new()
+    $btnLoadAll.Text = "Load ALL"
+    $btnLoadAll.Size = [System.Drawing.Size]::new(80, 28)
+    $btnLoadAll.Location = [System.Drawing.Point]::new(520, 47)
+    $btnLoadAll.BackColor = [System.Drawing.Color]::FromArgb(0, 122, 204)
+    $btnLoadAll.ForeColor = [System.Drawing.Color]::White
+    $btnLoadAll.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+    $btnLoadAll.FlatAppearance.BorderSize = 0
+    $btnLoadAll.Font = [System.Drawing.Font]::new("Segoe UI", 9)
+    $btnLoadAll.Cursor = [System.Windows.Forms.Cursors]::Hand
+    $btnLoadAll.Tag = $sessionData
+    $btnLoadAll.Add_Click({
+        param($s, $e)
+        $sess = $s.Tag
+        $cmds = Read-CustomCommands
+        if ($cmds.Count -eq 0) {
+            Write-SessionLog -OutputBox $sess.OutputBox -Message "Tidak ada command tersimpan di CustomCommands.json." -Type "WARNING"
+            return
+        }
+        Write-SessionLog -OutputBox $sess.OutputBox -Message "------ Daftar command ($($cmds.Count) item) ------" -Type "INFO"
+        foreach ($name in (@($cmds.Keys) | Sort-Object)) {
+            Write-SessionLog -OutputBox $sess.OutputBox -Message ("[" + $name + "] " + $cmds[$name]) -Type "INFO"
+        }
+    })
+
+    # Inisialisasi dropdown Name dengan command yang tersimpan saat sesi dibuka.
+    $all = @(Read-CustomCommands).Keys | Sort-Object
+    $combo = $sessionData.Inputs['Name']
+    if ($combo -and $all.Count -gt 0) { $combo.Items.AddRange([string[]]$all) }
+
     return @{
         Type = "CommandManagement"
         SessionData = $sessionData
-        Controls = @($btnSave, $btnLoad)
+        Controls = @($btnSave, $btnRefresh, $btnLoad, $btnLoadAll)
     }
 }
 

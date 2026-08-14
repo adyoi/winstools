@@ -3,7 +3,7 @@
     Tool: Virus Scan (ClamAV)
 #>
 
-$menuName = "Virus Scan (ClamAV)"
+$menuName = "Virus Scanner [ClamAV]"
 $toolName = "VirusScanner"
 $toolCategory = "Security"
 
@@ -49,10 +49,45 @@ function Get-CustomUI {
         }
     })
 
+    $btnUpdate = [System.Windows.Forms.Button]::new()
+    $btnUpdate.Text = "Update Databases"
+    $btnUpdate.Size = [System.Drawing.Size]::new(130, 28)
+    $btnUpdate.Location = [System.Drawing.Point]::new(340, 47)
+    $btnUpdate.BackColor = [System.Drawing.Color]::FromArgb(0, 122, 204)
+    $btnUpdate.ForeColor = [System.Drawing.Color]::White
+    $btnUpdate.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+    $btnUpdate.FlatAppearance.BorderSize = 0
+    $btnUpdate.Font = [System.Drawing.Font]::new("Segoe UI", 9)
+    $btnUpdate.Cursor = [System.Windows.Forms.Cursors]::Hand
+    $btnUpdate.Tag = $sessionData
+    $btnUpdate.Add_Click({
+        param($s, $e)
+        $sess = $s.Tag
+        $s.Text = "Updating..."
+        $s.Enabled = $false
+        try {
+            $base = Split-Path $sess.Inputs['ClamAVPath'].Text -Parent
+            $fresh = Join-Path $base 'freshclam.exe'
+            if (-not [System.IO.File]::Exists($fresh)) {
+                Write-SessionLog -OutputBox $sess.OutputBox -Message "freshclam.exe tidak ditemukan di: $fresh" -Type "ERROR"
+                return
+            }
+            Write-SessionLog -OutputBox $sess.OutputBox -Message "Memperbarui database ClamAV: $fresh" -Type "INFO"
+            $out = & $fresh 2>&1
+            $out | ForEach-Object { Write-SessionLog -OutputBox $sess.OutputBox -Message $_ -Type "INFO" }
+            Write-SessionLog -OutputBox $sess.OutputBox -Message "Pembaruan database selesai." -Type "SUCCESS"
+        } catch {
+            Write-SessionLog -OutputBox $sess.OutputBox -Message "Gagal memperbarui database: $_" -Type "ERROR"
+        } finally {
+            $s.Text = "Update Databases"
+            $s.Enabled = $true
+        }
+    })
+
     return @{
         Type = "VirusScanner"
         SessionData = $sessionData
-        Controls = @($btnCheck)
+        Controls = @($btnCheck, $btnUpdate)
     }
 }
 

@@ -13,18 +13,23 @@ $script:OptTestState  = $null
 $script:OptUpdState   = $null
 
 function Get-ProjectRoot {
-    $dir = Split-Path $PSScriptRoot -Parent          # Scripts
-    $root = Split-Path $dir -Parent                  # winstools (dev) atau Build\<ver> (exe)
-    while ($root -and -not (Test-Path (Join-Path $root 'Scripts\Modules\Config.psm1'))) {
+    $dir = Split-Path $PSScriptRoot -Parent
+    $root = Split-Path $dir -Parent
+    $prev = $null
+    while ($root -and $root -ne $prev) {
+        if (Test-Path (Join-Path $root 'Scripts\Modules\Config.psm1')) { return $root }
+        $prev = $root
         $root = Split-Path $root -Parent
     }
-    return $root
+    return $null
 }
 
 function Get-AppVersion {
     $root = Get-ProjectRoot
-    $vf = Join-Path $root 'VERSION'
-    if (Test-Path $vf) { return (Get-Content $vf -Raw).Trim() }
+    if ($root) {
+        $vf = Join-Path $root 'VERSION'
+        if (Test-Path $vf) { return (Get-Content $vf -Raw).Trim() }
+    }
     try {
         $vi = [System.Diagnostics.FileVersionInfo]::GetVersionInfo([System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName)
         if ($vi.FileVersion) { return $vi.FileVersion }
@@ -78,7 +83,7 @@ function New-OptionsForm {
 function New-ConfigTab {
     $tab = [System.Windows.Forms.TabPage]::new()
     $tab.Text = "Gui Config"
-    $tab.Padding = [System.Windows.Forms.Padding]::new(14)
+    $tab.Padding = [System.Windows.Forms.Padding]::new(5)
     $tab.BackColor = [System.Drawing.Color]::FromArgb(245, 245, 247)
 
     $lblTitle = [System.Windows.Forms.Label]::new()
@@ -108,7 +113,6 @@ function New-ConfigTab {
     $cboEnv = [System.Windows.Forms.ComboBox]::new()
     $cboEnv.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
     $cboEnv.Items.AddRange(@('Production', 'Development'))
-    $cboEnv.SelectedIndex = 0
     $cboEnv.Size = [System.Drawing.Size]::new(220, 26)
     $cboEnv.Location = [System.Drawing.Point]::new(14, 102)
     $tab.Controls.Add($cboEnv)
@@ -226,6 +230,23 @@ function New-ConfigTab {
         $d.Status.Text = "Nilai aktif: Environment=$envVal, Debug=$([bool]$dbgVal), LogLevel=$logVal"
     })
 
+    # Muat nilai aktif saat dialog dibuka (agar selalu menampilkan state terkini,
+    # termasuk setelah Apply lalu tutup-buka dialog lagi).
+    try {
+        $envVal = (Get-Config -Key 'Environment')
+        $dbgVal = (Get-Config -Key 'Debug')
+        $logVal = (Get-Config -Key 'LogLevel')
+        $tag.Suppress = $true
+        $tag.Env.SelectedIndex = if ($envVal -eq 'Development') { 1 } else { 0 }
+        $tag.Debug.Checked = [bool]$dbgVal
+        $idx = @('DEBUG', 'INFO', 'WARN', 'ERROR').IndexOf($logVal)
+        $tag.Log.SelectedIndex = if ($idx -ge 0) { $idx } else { 3 }
+        $tag.Suppress = $false
+        $tag.Status.Text = "Nilai aktif: Environment=$envVal, Debug=$([bool]$dbgVal), LogLevel=$logVal"
+    } catch {
+        $tag.Suppress = $false
+    }
+
     return $tab
 }
 
@@ -242,8 +263,7 @@ function Start-RedirectProcess {
         ArgumentList = ($quoted -join ' ')
         RedirectStandardOutput = $outFile
         RedirectStandardError = $errFile
-        UseShellExecute = $false
-        CreateNoWindow = $true
+        NoNewWindow = $true
         PassThru = $true
     }
     $proc = Start-Process @psi
@@ -361,7 +381,9 @@ function New-BuilderTab {
         $d = $s.Tag
         $ver = $d.Ver.Text.Trim()
         if (-not $ver) { $d.Box.AppendText("[ERROR] Versi kosong.`n"); return }
-        $buildScript = Join-Path (Get-ProjectRoot) 'Build\build-exe.ps1'
+        $root = Get-ProjectRoot
+        if (-not $root) { $d.Box.AppendText("[ERROR] Project root tidak ditemukan. Jalankan dari source (dev).`n"); return }
+        $buildScript = Join-Path $root 'Build\build-exe.ps1'
         if (-not (Test-Path $buildScript)) {
             $d.Box.AppendText("[ERROR] build-exe.ps1 tidak ditemukan: $buildScript`n")
             return
@@ -393,11 +415,13 @@ function New-BuilderTab {
         param($s, $e)
         $d = $s.Tag
         $ver = $d.Ver.Text.Trim()
+        $root = Get-ProjectRoot
+        if (-not $root) { return }
         $shortVer = ($ver -split '\.')[0..1] -join '.'
-        $dir = Join-Path (Get-ProjectRoot) "Build\$shortVer"
+        $dir = Join-Path $root "Build\$shortVer"
         if (Test-Path $dir) { Start-Process explorer.exe $dir }
         else {
-            $dir2 = Join-Path (Get-ProjectRoot) 'Build'
+            $dir2 = Join-Path $root 'Build'
             if (Test-Path $dir2) { Start-Process explorer.exe $dir2 }
         }
     })
@@ -472,6 +496,10 @@ function New-TesterTab {
         param($s, $e)
         $d = $s.Tag
         $root = Get-ProjectRoot
+        if (-not $root) {
+            $d.Box.AppendText("[ERROR] Project root tidak ditemukan. Jalankan dari source (dev).`n")
+            return
+        }
         $testDir = Join-Path $root 'Test'
         $kind = $d.Cbo.SelectedIndex
         if ($script:OptTestState -and $script:OptTestState.Proc -and -not $script:OptTestState.Proc.HasExited) {
@@ -486,7 +514,7 @@ function New-TesterTab {
         $runner = Join-Path $env:TEMP ("winstools_runner_" + [guid]::NewGuid().ToString('N') + ".ps1")
         switch ($kind) {
             0 {
-                $body = "`$ErrorActionPreference='Continue'; Import-Module Pester -ErrorAction SilentlyContinue; `$p = Get-Module Pester -ListAvailable | Sort-Object Version -Descending | Select-Object -First 1; if (`$p.Version -ge [version]'5.0') { `$r = Invoke-Pester -Path '$testDir\pester_test.ps1' -PassThru } else { `$r = Invoke-Pester -Script '$testDir\pester_test.ps1' -PassThru }; Write-Output ('PESTER: Passed=' + `$r.PassedCount + ' Failed=' + `$r.FailedCount)"
+                $body = "`$ErrorActionPreference='Continue'; Import-Module Pester -ErrorAction SilentlyContinue; `$p = Get-Module Pester -ListAvailable | Sort-Object Version -Descending | Select-Object -First 1; if (`$p.Version -ge [version]'5.0') { `$r = Invoke-Pester -Path '$testDir\Pester.Tests.ps1' -PassThru } else { `$r = Invoke-Pester -Script '$testDir\Pester.Tests.ps1' -PassThru }; Write-Output ('PESTER: Passed=' + `$r.PassedCount + ' Failed=' + `$r.FailedCount)"
             }
             1 {
                 $body = "& '$testDir\form_test.ps1' -AutoClose 3"
@@ -571,8 +599,9 @@ function New-UpdateTab {
     $box.BorderStyle = [System.Windows.Forms.BorderStyle]::None
     $box.Dock = [System.Windows.Forms.DockStyle]::Fill
     $box.Text = "[READY] Sumber rilis: $script:GitRepo`n"
-    $tab.Controls.Add($top)
     $tab.Controls.Add($box)
+    $tab.Controls.Add($top)
+    
 
     $btnCheck.Tag = @{ Box = $box; Btn = $btnCheck; BtnDownload = $btnDownload }
     $btnDownload.Tag = @{ Box = $box; Btn = $btnCheck; BtnDownload = $btnDownload }
@@ -643,11 +672,12 @@ function New-ChangelogTab {
     $box.Font = [System.Drawing.Font]::new("Consolas", 9.5)
     $box.BackColor = [System.Drawing.Color]::White
     $box.ForeColor = [System.Drawing.Color]::FromArgb(45, 45, 50)
-    $chg = Join-Path (Get-ProjectRoot) 'CHANGELOG.md'
-    if (Test-Path $chg) {
+    $root = Get-ProjectRoot
+    $chg = if ($root) { Join-Path $root 'CHANGELOG.md' } else { $null }
+    if ($chg -and (Test-Path $chg)) {
         $box.Text = Get-Content $chg -Raw
     } else {
-        $box.Text = "CHANGELOG.md tidak ditemukan."
+        $box.Text = "CHANGELOG.md tidak ditemukan (jalankan dari source / dev)."
     }
     $tab.Controls.Add($box)
     return $tab

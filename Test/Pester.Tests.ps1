@@ -1,5 +1,6 @@
 # WINSTOOLS - Uji otomatis (kompatibel Pester 3.4 & 5.x)
-# Jalankan:  powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-Pester -Script .\Test\pester_test.ps1"
+# Jalankan:  powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-Pester -Path .\Test\Pester.Tests.ps1"
+# (nama memakai standard Pester `*.Tests.ps1` sehingga otomatis ter-discover dari direktori Test)
 # Catatan: assertion memakai `throw` (bukan sintaks 'Should') agar lintas-versi Pester.
 
 $here = Split-Path $MyInvocation.MyCommand.Path -Parent

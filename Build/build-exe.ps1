@@ -155,6 +155,7 @@ Copy-Item -Path $srcTools   -Destination $outDir -Recurse -Force
 New-Item -ItemType Directory -Path $dstIcons -Force | Out-Null
 Copy-Item -Path (Join-Path $projRoot "Icons\window.ico") -Destination $dstIcons -Force
 Copy-Item -Path (Join-Path $projRoot "Icons\window.png") -Destination $dstIcons -Force
+Copy-Item -Path (Join-Path $projRoot "Icons\winstools.bmp") -Destination $dstIcons -Force
 Write-Host "[build] Runtime disalin ke $outDir (Modules, Tools, Icons)"
 
 # ---------------------------------------------------------------------------

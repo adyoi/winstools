@@ -8,7 +8,7 @@
     'Production' (default) atau 'Development' (log debug).
 
 .CONTOH
-    powershell -ExecutionPolicy Bypass -File .\Test\test_form.ps1 -AutoClose 5
+    powershell -ExecutionPolicy Bypass -File .\Test\form_test.ps1 -AutoClose 5
 #>
 param(
     [int]$AutoClose = 5,
