@@ -57,6 +57,28 @@ powershell -ExecutionPolicy Bypass -File Scripts\Main.ps1
 
 Mode log DEBUG: atur Environment/Debug melalui tab **Gui Config** di tombol **Options** (atau ubah `Initialize-Config -Environment 'Development'` pada `Scripts\Main.ps1`).
 
+### Opsi Konfigurasi Aplikasi
+
+Konfigurasi dikelola modul `Scripts\Modules\Config.psm1` dan dapat diubah langsung saat aplikasi berjalan melalui **tombol Options → Gui Config** (terapkan langsung, tanpa restart):
+
+| Opsi | Nilai | Default | Keterangan |
+| --- | --- | --- | --- |
+| `Environment` | `Production` / `Development` | `Production` | `Development` menyalakan log DEBUG otomatis; `Production` output bersih |
+| `Debug` | `true` / `false` | mengikuti Environment | Menampilkan log `[DEBUG]` (bisa di-override manual) |
+| `LogLevel` | `DEBUG` / `INFO` / `WARN` / `ERROR` | mengikuti Environment | Ambang log: `DEBUG` → semua; `ERROR` → hanya error (bisa di-override manual) |
+
+Penetapan otomatis:
+
+- **Development** → `Debug = true`, `LogLevel = DEBUG`
+- **Production** → `Debug = false`, `LogLevel = ERROR`
+
+Fungsi modul:
+
+- `Initialize-Config -Environment <env> -Debug[:<bool>] -LogLevel <level>` — tetapkan nilai (parameter opsional; tanpa parameter mengikuti Environment).
+- `Get-Config -Key <Environment|Debug|LogLevel>` — baca nilai aktif.
+- `Set-Config -Key <...> -Value <...>` — set langsung.
+- `Write-DebugLog`, `Write-InfoLog`, `Write-WarnLog`, `Write-ErrorLog` — log berwarna yang menghormati `Debug` / `LogLevel`.
+
 ### Dari release (`Build\<versi>\winstools.exe` atau installer)
 
 Folder hasil build bersifat **self-contained** — cukup double-click `winstools.exe`. Folder berisi `Modules\`, `Tools\`, dan `Icons\` yang otomatis disalin saat build. Alternatif: jalankan **`winstools-installer.exe`** (Inno Setup) untuk instalasi ke `C:\Program Files\Winstools` lengkap dengan shortcut & uninstaller.

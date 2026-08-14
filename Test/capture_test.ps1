@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Continue'
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
-$root = 'D:\Documents\winstools'
+$root = Split-Path $PSScriptRoot -Parent   # winstools\
 Import-Module (Join-Path $root 'Scripts\Modules\Config.psm1') -Force
 Initialize-Config -Environment 'Development'
 Import-Module (Join-Path $root 'Scripts\Modules\App.psm1') -Force
@@ -67,7 +67,7 @@ foreach ($feat in $features) {
 $form.Controls.Add($panelRight)
 $form.Controls.Add($panelMenu)
 
-$script:savePath = Join-Path $root 'screenshot.png'
+$script:savePath = Join-Path $root 'winstools.png'
 $script:captured = $false
 
 $form.Add_Shown({

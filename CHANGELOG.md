@@ -25,6 +25,13 @@ Semua perubahan penting pada proyek dicatat di sini. Format mengikuti [Keep a Ch
 ### Ditambahkan (1.0.1)
 - **Tombol Options** (merah + separator) di menu utama: dialog dengan tab **Gui Config** (Environment Development/Production, Debug, LogLevel), **Gui Builder** (jalankan `build-exe.ps1`), **Gui Tester** (Pester / form test), **Check Update** (cek rilis GitHub `adyoi/winstools` + download), **Changelog**, dan **About**.
 
+### Diperbaiki
+- Options: output log tidak lagi tertimpa tombol (layout panel atas + `Dock=Fill` di tab Builder/Tester/Update).
+- Options Gui Config: "Muat Nilai Aktif" kini benar menampilkan nilai (`SelectedIndex`, tanpa menimpa oleh handler Environment).
+- Options Gui Tester: runner kompatibel Pester 5 (`-Path`) dan 3.x (`-Script`); output `Write-Host` tertangkap via `*>&1`.
+- capture_test.ps1: path root tidak lagi di-hardcode (dipakai `$PSScriptRoot`).
+- Versi aplikasi (judul form, header menu, welcome) dibaca dinamis dari file `VERSION`.
+
 ## [1.0.0] - 2026-08
 
 Rilis pertama: Windows Super Tools lengkap dengan 10 tool, multi-session, welcome dashboard, auto-elevasi, signing Authenticode SHA256 + timestamp, dan CI build + test.
